@@ -1,0 +1,1319 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Crystals and Inks Protocol</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,100..900&family=IBM+Plex+Mono:wght@400;500;600&family=Public+Sans:wght@400..700&display=swap">
+<style>
+/* Layout: a bench sheet with four tabs (Plan, Experiment 1, Experiment 2, Review). A sticky 40-minute track (drawn to scale, 5:8:12:15)
+   and clock sit on top; timing cues pulse the tab the team should open next.
+   Colour carries meaning: blue = copper sulfate / crystals, orange = chromatography and NaCl, amber = "not yet" feedback. */
+:root{
+  --bg:#EDF1F7; --surface:#FFFFFF; --surface-2:#F1F5FB; --ink:#14233A; --ink-2:#42536B; --ink-3:#586A82;
+  --line:#CAD5E4; --line-2:#E0E8F3;
+  --cu:#1F5FBF; --cu-soft:#E2EBFA; --cu-ink:#123C85;
+  --chr:#B04F08; --chr-soft:#FCEADB; --chr-ink:#863803;
+  --salt:#C2570C;
+  --red:#C23A30; --blue:#2552C0;
+  --ok:#17794B; --ok-soft:#DDF3E6; --warn:#8F5400; --warn-soft:#FCEFD3;
+  --glass:#8A9BB0; --eth:#BFE0F2;
+  --f-display:"Archivo","Arial Narrow",system-ui,sans-serif;
+  --f-body:"Public Sans",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+  --f-mono:"IBM Plex Mono",ui-monospace,Menlo,Consolas,monospace;
+}
+@media (prefers-color-scheme: dark){
+  :root{
+    --bg:#0C1320; --surface:#131D2E; --surface-2:#192639; --ink:#E6EEF8; --ink-2:#B2C1D6; --ink-3:#8DA0B9;
+    --line:#2B3C55; --line-2:#21304A;
+    --cu:#7DAEFF; --cu-soft:#172B52; --cu-ink:#A9C8FF;
+    --chr:#FFA25C; --chr-soft:#3A2412; --chr-ink:#FFC59B;
+    --salt:#FFA25C;
+    --red:#FF8277; --blue:#84A9FF;
+    --ok:#53D493; --ok-soft:#13362A; --warn:#F3B24F; --warn-soft:#3A2D12;
+    --glass:#5F7794; --eth:#4F7D95;
+    color-scheme:dark;
+  }
+}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth;scroll-padding-top:130px}
+body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.55 var(--f-body);-webkit-text-size-adjust:100%}
+h1,h2,h3,h4,p,ol,ul,figure{margin:0}
+h1,h2,h3,h4{font-family:var(--f-display);text-wrap:balance}
+sub{font-size:.72em;line-height:0}
+b{font-weight:650}
+:focus-visible{outline:3px solid var(--blue);outline-offset:2px;border-radius:4px}
+.wrap{max-width:1100px;margin:0 auto;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+.skip{position:absolute;left:-999px;top:0;background:var(--ink);color:var(--surface);padding:8px 12px;z-index:70}
+.skip:focus{left:8px;top:8px}
+
+/* buttons, chips, fields */
+.btn{font:600 14px/1.1 var(--f-body);padding:10px 14px;border-radius:8px;border:1.5px solid var(--ink-3);background:var(--surface);color:var(--ink);cursor:pointer;display:inline-flex;gap:6px;align-items:center;justify-content:center}
+.btn:hover:not(:disabled){border-color:var(--ink)}
+.btn.primary{background:var(--ink);color:var(--surface);border-color:var(--ink)}
+.btn.ghost{border-color:var(--line)}
+.btn.small{padding:7px 10px;font-size:13px}
+.btn:disabled{opacity:.45;cursor:not-allowed}
+.chip{display:inline-flex;gap:6px;align-items:center;padding:3px 10px;border-radius:99px;font:500 12.5px/1.3 var(--f-mono);background:var(--surface-2);border:1px solid var(--line);color:var(--ink-2)}
+.chip.cu{background:var(--cu-soft);color:var(--cu-ink);border-color:transparent}
+.chip.chr{background:var(--chr-soft);color:var(--chr-ink);border-color:transparent}
+.chip.ok{background:var(--ok-soft);color:var(--ok);border-color:transparent}
+select,.txt{font:500 14.5px var(--f-body);color:var(--ink);background:var(--surface);border:1.5px solid var(--ink-3);border-radius:8px;padding:8px 9px;max-width:100%}
+.txt{width:100%}
+textarea.txt{font:400 15px/1.5 var(--f-body);min-height:92px;resize:vertical}
+
+/* top bar */
+.bar{position:sticky;top:0;z-index:50;background:var(--surface);border-bottom:1px solid var(--line)}
+.bar-in{display:grid;grid-template-columns:auto minmax(0,1fr) auto;gap:16px;align-items:center;padding-block:8px 4px}
+.brand{font:800 15px/1 var(--f-display);font-stretch:120%;letter-spacing:.03em;white-space:nowrap;text-transform:uppercase}
+.trackwrap{position:relative;padding-bottom:8px}
+.track{display:flex;gap:4px}
+.seg{flex:var(--w) 1 0;min-width:0;display:grid;grid-template-columns:auto minmax(0,1fr);column-gap:7px;padding:5px 8px;border-radius:6px;background:var(--surface-2);border:1px solid var(--line-2);color:var(--ink-2);text-decoration:none;font-size:12px;line-height:1.2;overflow:hidden}
+.seg[data-k="cu"]{border-top:3px solid var(--cu)}
+.seg[data-k="chr"]{border-top:3px solid var(--chr)}
+.seg b{grid-row:1/3;align-self:center;font:600 16px/1 var(--f-mono)}
+.seg span{font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.seg i{font:500 11px/1.2 var(--f-mono);font-style:normal;color:var(--ink-3)}
+.seg.on{background:var(--ink);color:var(--surface);border-color:var(--ink)}
+.seg.on i{color:inherit;opacity:.8}
+.seg.now{box-shadow:inset 0 -3px 0 var(--ok)}
+.prog{position:absolute;left:0;right:0;bottom:0;height:4px;background:var(--line-2);border-radius:4px;overflow:hidden}
+.prog>div{height:100%;width:0;background:var(--ok)}
+.tick{position:absolute;bottom:0;width:2px;height:10px;background:var(--ink-3);transform:translateX(-1px);border-radius:1px}
+.clock{display:flex;align-items:center;gap:6px}
+.clock output{font:600 18px/1 var(--f-mono);min-width:5ch;text-align:right;font-variant-numeric:tabular-nums}
+.tabs{display:flex;gap:6px;padding-block:4px 8px;overflow-x:auto}
+.tab{font:650 14px/1.2 var(--f-body);padding:8px 14px;border-radius:8px;border:1.5px solid var(--line);background:var(--surface);color:var(--ink-2);cursor:pointer;white-space:nowrap;display:inline-flex;gap:8px;align-items:center}
+.tab:hover{border-color:var(--ink)}
+.tab .tn{font:600 12px/1 var(--f-mono);padding:3px 6px;border-radius:4px;background:var(--surface-2);color:var(--ink-2)}
+.tab[aria-selected="true"]{background:var(--ink);color:var(--surface);border-color:var(--ink)}
+.tab[aria-selected="true"] .tn{background:var(--surface);color:var(--ink)}
+.tab.cue{box-shadow:0 0 0 3px var(--warn);border-color:var(--warn)}
+@media (max-width:720px){
+  .bar-in{grid-template-columns:minmax(0,1fr) auto;gap:10px}
+  .brand{display:none}
+  .seg{grid-template-columns:minmax(0,1fr);padding:6px 3px;text-align:center}
+  .seg span,.seg i{display:none}
+  .seg b{grid-row:auto}
+  .clock{gap:4px}
+  .clock output{font-size:16px}
+  .clock .btn{padding:7px 8px}
+}
+
+/* hero */
+.hero-in{display:grid;grid-template-columns:minmax(0,1.35fr) minmax(0,.65fr);gap:32px;align-items:center;padding-block:40px 18px}
+.eyebrow{font:500 13px/1.3 var(--f-mono);text-transform:uppercase;letter-spacing:.09em;color:var(--ink-3);margin-bottom:14px}
+.hero h1{font:800 clamp(32px,6vw,58px)/1.04 var(--f-display);font-stretch:122%;letter-spacing:-.01em}
+.t-cu{color:var(--cu)}
+.t-chr{color:var(--chr)}
+.lede{margin-top:18px;max-width:60ch;font-size:18px;color:var(--ink-2)}
+.team{margin-top:20px;display:flex;flex-wrap:wrap;gap:10px;align-items:center}
+.team label{font:600 13px var(--f-mono);text-transform:uppercase;letter-spacing:.06em;color:var(--ink-3)}
+.team .txt{width:min(100%,280px)}
+.hero-art{width:100%;max-width:300px;justify-self:center;height:auto}
+@media (max-width:820px){.hero-in{grid-template-columns:minmax(0,1fr)}.hero-art{max-width:220px;justify-self:start}}
+.legend{display:flex;flex-wrap:wrap;gap:8px;align-items:center;padding-block:14px 0}
+.hint{font-size:13.5px;color:var(--ink-3)}
+
+/* sections */
+.sect{padding-block:40px 0}
+.sect h2{font:800 clamp(22px,3.4vw,30px)/1.1 var(--f-display);font-stretch:112%;display:flex;flex-wrap:wrap;gap:12px;align-items:center}
+.sect .lead{margin-top:6px;color:var(--ink-2);max-width:68ch}
+.safe-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin-top:16px}
+.safe{display:grid;grid-template-columns:auto 34px minmax(0,1fr);gap:12px;align-items:center;padding:12px 14px;border:1.5px solid var(--line);border-radius:10px;background:var(--surface);cursor:pointer}
+.safe:has(input:checked){border-color:var(--ok);background:var(--ok-soft)}
+.safe input,.kit input{width:20px;height:20px;accent-color:var(--ok)}
+.safe svg{width:34px;height:34px;stroke:var(--ink);fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+.safe span{font-size:15px}
+@media (max-width:720px){.safe-grid{grid-template-columns:minmax(0,1fr)}}
+.kit-wrap{margin-top:16px;overflow-x:auto;border:1px solid var(--line);border-radius:10px;background:var(--surface)}
+.kit{border-collapse:collapse;width:100%;font-size:15px}
+.kit th,.kit td{padding:10px 14px;text-align:left;border-bottom:1px solid var(--line-2);vertical-align:top}
+.kit tr:last-child td,.kit tr:last-child th{border-bottom:0}
+.kit thead th{font:600 12px var(--f-mono);text-transform:uppercase;letter-spacing:.06em;color:var(--ink-3)}
+.kit td.amt{font-family:var(--f-mono);font-size:14px}
+.kit tr.sw-row{background:var(--warn-soft)}
+.roles{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;margin-top:16px}
+.role{padding:14px 16px;border-radius:10px;background:var(--surface);border:1px solid var(--line);font-size:14.5px;color:var(--ink-2)}
+.role b{display:block;font:700 16px var(--f-display);font-stretch:108%;color:var(--ink);margin-bottom:4px}
+@media (max-width:820px){.roles{grid-template-columns:minmax(0,1fr)}}
+details.teacher{margin-top:24px;border:1px solid var(--line);border-radius:10px;background:var(--surface);padding:12px 16px}
+details.teacher summary{font-weight:650;cursor:pointer}
+details.teacher ul{margin:10px 0 0;padding-left:20px;display:grid;gap:6px;color:var(--ink-2);font-size:15px}
+
+/* stations */
+.station{padding-block:36px 0}
+.st-head{display:flex;align-items:flex-end;gap:18px;padding-bottom:14px;border-bottom:2px solid var(--ink)}
+.st-num{font:800 clamp(56px,10vw,96px)/.8 var(--f-display);font-stretch:125%}
+.st-time{font:500 13px/1 var(--f-mono);text-transform:uppercase;letter-spacing:.08em;color:var(--ink-3);margin-bottom:8px}
+.st-head h2{font:800 clamp(26px,4.4vw,40px)/1.05 var(--f-display);font-stretch:112%}
+.st-goal{margin-top:14px;max-width:70ch;color:var(--ink-2);font-size:17px}
+.datacard{margin-top:16px;display:flex;flex-wrap:wrap;gap:8px;align-items:center;padding:10px 14px;border-radius:10px;background:var(--surface);border:1px solid var(--line)}
+.dc-t{font:600 12px var(--f-mono);text-transform:uppercase;letter-spacing:.08em;color:var(--ink-3);margin-right:4px}
+.block{margin-top:36px;display:grid;gap:16px}
+.sub{font:700 21px/1.2 var(--f-display);font-stretch:108%;display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+.tag{font:600 12px/1 var(--f-mono);background:var(--ink);color:var(--surface);padding:5px 7px;border-radius:4px;letter-spacing:.04em}
+.sub-note{color:var(--ink-2);max-width:72ch}
+.callout{padding:12px 14px;border-radius:10px;background:var(--warn-soft);color:var(--ink);max-width:76ch;font-size:15px;margin-top:14px}
+.callout b{color:var(--warn)}
+.callout.time{background:var(--cu-soft)}
+.callout.time b{color:var(--cu-ink)}
+.callout .btn{margin-top:10px}
+
+/* steppers and stage */
+.stepper{display:grid;grid-template-columns:minmax(0,5fr) minmax(0,6fr);gap:22px;align-items:start;background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:16px}
+.steps{list-style:none;padding:0;display:grid;gap:6px}
+.step button{all:unset;box-sizing:border-box;width:100%;display:grid;grid-template-columns:32px minmax(0,1fr);gap:12px;align-items:start;padding:10px 12px;border-radius:10px;border:1.5px solid transparent;cursor:pointer}
+.step button:hover{background:var(--surface-2)}
+.step button:focus-visible{outline:3px solid var(--blue);outline-offset:2px}
+.step.on button{background:var(--surface-2);border-color:var(--ink)}
+.step-n{width:30px;height:30px;border-radius:50%;display:grid;place-items:center;font:600 14px var(--f-mono);border:2px solid var(--line);color:var(--ink-2)}
+.step.on .step-n{background:var(--ink);color:var(--surface);border-color:var(--ink)}
+.step-t b{display:block;font-weight:650;line-height:1.35}
+.step-t small{display:block;margin-top:3px;font-size:14px;line-height:1.45;color:var(--ink-2)}
+.stage-col{display:grid;gap:10px;position:sticky;top:150px}
+.stage{background:var(--surface-2);border:1px solid var(--line-2);border-radius:10px;overflow:hidden}
+.stage svg{display:block;width:100%;height:auto}
+.cap{font:500 13.5px/1.45 var(--f-mono);color:var(--ink-2);min-height:2.9em}
+.st-ctl{display:flex;flex-wrap:wrap;gap:8px}
+@media (max-width:820px){.stepper{grid-template-columns:minmax(0,1fr)}.stage-col{position:static;order:-1}}
+.s-glass{fill:none;stroke:var(--glass);stroke-width:3;stroke-linejoin:round;stroke-linecap:round}
+.s-lbl{font:500 13px var(--f-mono);fill:var(--ink-3)}
+.s-lbl.b{font-weight:600;fill:var(--ink)}
+.s-rod{stroke:#8d6e63;stroke-linecap:round}
+
+/* tables and forms */
+.scroll-x{overflow-x:auto;max-width:100%;border:1px solid var(--line);border-radius:10px;background:var(--surface)}
+.tbl{border-collapse:collapse;width:100%;font-size:14.5px}
+.tbl th,.tbl td{border-bottom:1px solid var(--line-2);padding:9px 10px;text-align:left;vertical-align:middle}
+.tbl tr:last-child td,.tbl tr:last-child th{border-bottom:0}
+.tbl thead th{font:600 11.5px var(--f-mono);text-transform:uppercase;letter-spacing:.06em;color:var(--ink-3);border-bottom:2px solid var(--ink);white-space:nowrap}
+.tbl td.num{font-family:var(--f-mono);font-variant-numeric:tabular-nums}
+.tbl tr.grp th{background:var(--surface-2);font:650 14.5px/1.3 var(--f-body);border-bottom:1px solid var(--line);padding-block:10px}
+.tbl tr.grp .in{margin-left:6px}
+.tbl input.in{font:500 16px var(--f-mono);width:8ch;color:var(--ink);background:var(--surface);border:1.5px solid var(--ink-3);border-radius:6px;padding:6px 8px}
+.tbl .out{font:600 15px var(--f-mono);color:var(--cu-ink);white-space:nowrap}
+.fb{padding:9px 11px;border-radius:8px;font-size:15px}
+.fb:empty{display:none}
+.fb.ok{background:var(--ok-soft);color:var(--ok)}
+.fb.warn{background:var(--warn-soft);color:var(--warn)}
+.pred-row{display:flex;flex-wrap:wrap;gap:12px;align-items:center;padding:12px 14px;border-radius:10px;background:var(--surface);border:1px solid var(--line)}
+.pred-row label{font-weight:650}
+.reasons{display:grid;gap:8px}
+.reason{display:grid;grid-template-columns:auto minmax(0,1fr);gap:10px;align-items:start;padding:10px 12px;border-radius:8px;border:1.5px solid var(--line);background:var(--surface);cursor:pointer;font-size:15px}
+.reason input{width:19px;height:19px;margin-top:2px;accent-color:var(--cu)}
+.reason small{display:block;margin-top:4px;font-size:13.5px}
+.reason small:empty{display:none}
+.reason.right{border-color:var(--ok);background:var(--ok-soft)}
+.reason.wrong{border-color:var(--warn);background:var(--warn-soft)}
+.sim-ctl{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.summary{width:100%;min-height:300px;font:13.5px/1.55 var(--f-mono);color:var(--ink);background:var(--surface);border:1.5px solid var(--ink-3);border-radius:10px;padding:14px;resize:vertical}
+
+/* graph */
+.graph-card{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:14px}
+.graph-card svg{display:block;width:100%;height:auto}
+.g-grid{stroke:var(--line-2);stroke-width:1}
+.g-ax{stroke:var(--ink-3);stroke-width:1.5}
+.g-t{font:500 12px var(--f-mono);fill:var(--ink-3)}
+.g-t.b{font-weight:600;fill:var(--ink)}
+.g-t.cu{fill:var(--cu);font-size:13.5px}
+.g-t.na{fill:var(--salt);font-size:13.5px}
+.g-cu{fill:none;stroke:var(--cu);stroke-width:3.5;stroke-linejoin:round}
+.g-na{fill:none;stroke:var(--salt);stroke-width:3.5;stroke-linejoin:round}
+.g-dcu{fill:var(--surface);stroke:var(--cu);stroke-width:2.5}
+.g-dna{fill:var(--surface);stroke:var(--salt);stroke-width:2.5}
+.g-cur{stroke:var(--ink-3);stroke-dasharray:5 4;stroke-width:1.5}
+.g-ccu{fill:var(--cu);stroke:var(--surface);stroke-width:2}
+.g-cna{fill:var(--salt);stroke:var(--surface);stroke-width:2}
+.slide-row{display:flex;flex-wrap:wrap;gap:14px;align-items:center;margin-top:10px}
+.slide-row input[type=range]{flex:1 1 220px;accent-color:var(--cu);height:28px}
+.slide-row output{font:600 18px var(--f-mono);min-width:6ch}
+.reads{display:flex;flex-wrap:wrap;gap:8px;margin-top:10px}
+
+.foot{padding-block:56px 72px}
+.foot p{color:var(--ink-3);font-size:13.5px;max-width:78ch}
+.foot p+p{margin-top:8px}
+.toast{position:fixed;left:50%;bottom:calc(16px + env(safe-area-inset-bottom,0px));transform:translate(-50%,20px);background:var(--ink);color:var(--surface);padding:10px 16px;border-radius:10px;font-weight:600;opacity:0;pointer-events:none;transition:opacity .3s,transform .3s;z-index:80;max-width:calc(100% - 32px);text-align:center}
+.toast.show{opacity:1;transform:translate(-50%,0)}
+@media print{.bar,.toast,.st-ctl{display:none}.stage-col{position:static}.panel[hidden]{display:block!important}}
+@media (prefers-reduced-motion:reduce){html{scroll-behavior:auto}*,*::before,*::after{animation-duration:.001ms!important;transition:none!important}}
+</style>
+</head>
+<body>
+<a class="skip" href="#main">Skip to the protocol</a>
+
+<header class="bar">
+  <div class="wrap bar-in">
+    <div class="brand">Chem Lab</div>
+    <div class="trackwrap">
+      <nav class="track" aria-label="The 40-minute plan, drawn to scale">
+        <a class="seg" style="--w:5" href="#p-plan" data-seg="plan" title="Get ready, 0 to 5 minutes"><b>1</b><span>Get ready</span><i>0–5′</i></a>
+        <a class="seg" data-k="cu" style="--w:8" href="#p-cryst" data-seg="cryst" title="Dissolve, cool a little and hang the seed, 5 to 13 minutes"><b>2</b><span>Dissolve and cool</span><i>5–13′</i></a>
+        <a class="seg" data-k="chr" style="--w:12" href="#p-chrom" data-seg="chrom" title="Run the strips, 13 to 25 minutes"><b>3</b><span>Run the strips</span><i>13–25′</i></a>
+        <a class="seg" style="--w:15" href="#p-review" data-seg="review" title="Measure and review, 25 to 40 minutes"><b>4</b><span>Measure and review</span><i>25–40′</i></a>
+      </nav>
+      <i class="tick" style="left:12.5%" title="5 min: split the jobs"></i>
+      <i class="tick" style="left:32.5%" title="13 min: switch to Experiment 2"></i>
+      <i class="tick" style="left:37.5%" title="15 min: strips start running"></i>
+      <i class="tick" style="left:42.5%" title="17 min: crystal check"></i>
+      <i class="tick" style="left:50%" title="20 min: solubility graph"></i>
+      <i class="tick" style="left:62.5%" title="25 min: strips out"></i>
+      <i class="tick" style="left:80%" title="32 min: review"></i>
+      <div class="prog" aria-hidden="true"><div id="prog"></div></div>
+    </div>
+    <div class="clock">
+      <output id="clk" aria-label="Elapsed time">00:00</output>
+      <button class="btn small primary" id="clkBtn" type="button" disabled title="Tick all four safety boxes to start the clock">Start</button>
+      <button class="btn small ghost" id="clkReset" type="button" aria-label="Reset the clock">Reset</button>
+    </div>
+  </div>
+  <div class="wrap">
+    <div class="tabs" role="tablist" aria-label="Protocol sections">
+      <button class="tab" role="tab" id="t-plan" aria-controls="p-plan" aria-selected="true" data-tab="plan"><span class="tn">0</span>Plan and safety</button>
+      <button class="tab" role="tab" id="t-cryst" aria-controls="p-cryst" aria-selected="false" tabindex="-1" data-tab="cryst"><span class="tn">1</span>Crystallization</button>
+      <button class="tab" role="tab" id="t-chrom" aria-controls="p-chrom" aria-selected="false" tabindex="-1" data-tab="chrom"><span class="tn">2</span>Chromatography</button>
+      <button class="tab" role="tab" id="t-review" aria-controls="p-review" aria-selected="false" tabindex="-1" data-tab="review"><span class="tn">3</span>Review</button>
+    </div>
+  </div>
+</header>
+
+<main id="main">
+
+<!-- ================= PLAN ================= -->
+<section class="panel" role="tabpanel" id="p-plan" aria-labelledby="t-plan">
+  <div class="hero">
+    <div class="wrap hero-in">
+      <div>
+        <p class="eyebrow">Chemistry lab · 40-minute bench protocol</p>
+        <h1>Grow <span class="t-cu">crystals</span> and split <span class="t-chr">pen inks</span></h1>
+        <p class="lede">Two experiments in one class. Dissolve copper sulfate in hot water and let it cool into crystals. While it cools, run pen ink up two kinds of paper in the same cup. Each experiment has its own tab, and the page tells you when to switch.</p>
+        <div class="team">
+          <label for="team">Team name</label>
+          <input class="txt" id="team" type="text" autocomplete="off" placeholder="Type your team name">
+        </div>
+      </div>
+      <svg class="hero-art" viewBox="0 0 280 220" role="img" aria-label="Blue copper sulfate crystals next to a paper strip with separated colour bands">
+        <path d="M20 150 H150 Q150 182 126 184 H44 Q20 182 20 150Z" fill="#1668c8" opacity=".85" stroke="var(--glass)" stroke-width="3"/>
+        <polygon points="40,160 58,150 70,164 52,174" fill="#8fc1f7"/>
+        <polygon points="78,166 98,156 108,170 88,178" fill="#8fc1f7"/>
+        <polygon points="112,158 128,152 138,164 122,170" fill="#8fc1f7"/>
+        <rect x="190" y="26" width="58" height="156" fill="#f3ecd2" stroke="var(--glass)" stroke-width="2"/>
+        <ellipse cx="206" cy="160" rx="6" ry="6" fill="#222"/>
+        <ellipse cx="206" cy="128" rx="6" ry="6" fill="#1f3b8f"/>
+        <ellipse cx="206" cy="98" rx="6" ry="7" fill="#b0206b"/>
+        <ellipse cx="206" cy="64" rx="6" ry="7" fill="#d4a017"/>
+        <ellipse cx="232" cy="160" rx="6" ry="6" fill="#6d4c41"/>
+        <ellipse cx="232" cy="122" rx="6" ry="6" fill="#7a3b12"/>
+        <ellipse cx="232" cy="78" rx="6" ry="7" fill="#e0791a"/>
+      </svg>
+    </div>
+    <div class="wrap">
+      <div class="legend" role="note" aria-label="Colour key">
+        <span class="chip cu">blue = copper sulfate, crystals</span><span class="chip chr">orange = chromatography</span>
+        <span class="hint">Class of 14: four groups of 3 and one group of 2.</span>
+      </div>
+    </div>
+  </div>
+
+  <section class="wrap sect" aria-labelledby="time-h">
+    <h2 id="time-h">How the 40 minutes work</h2>
+    <p class="lead">Crystals and chromatography both spend most of their time waiting. So you do not do one, then the other. You start one, and use its waiting time for the other. The clock at the top buzzes a message at each switch and highlights the tab to open.</p>
+    <div class="kit-wrap">
+      <table class="kit">
+        <thead><tr><th scope="col">Minute</th><th scope="col">What happens</th><th scope="col">Open tab</th></tr></thead>
+        <tbody>
+          <tr><th scope="row">0–5</th><td><b>Get ready.</b> Tick the safety boxes, collect the kit, choose roles. The clock starts when the safety boxes are ticked.</td><td><span class="chip">Plan</span></td></tr>
+          <tr><th scope="row">5–13</th><td><b>Split the jobs.</b> The Chemist weighs and dissolves the CuSO₄, lets it cool a little and hangs the seed (Experiment 1, steps 1–5). The other students choose 4 pen colours, draw baselines and dots, and set up the solvent cups (Experiment 2, steps 1–2).</td><td><span class="chip cu">Experiment 1</span> <span class="chip chr">Experiment 2</span></td></tr>
+          <tr class="sw-row"><th scope="row">13</th><td><b>SWITCH.</b> The seed is growing by itself and needs no hands. The whole team goes to Experiment 2, step 3, and hangs the strips.</td><td><span class="chip chr">Experiment 2</span></td></tr>
+          <tr><th scope="row">15</th><td>All four strips touch the liquid. The run starts (up to 10 minutes). Do not move the cups.</td><td><span class="chip chr">Experiment 2</span></td></tr>
+          <tr class="sw-row"><th scope="row">17–20</th><td><b>Use the waiting time.</b> Crystal check: look at the slide and the seed crystal with the hand lens (Experiment 1, step 6).</td><td><span class="chip cu">Experiment 1</span></td></tr>
+          <tr class="sw-row"><th scope="row">20–25</th><td><b>Use the waiting time.</b> Read the solubility curves, then answer the side question: why CuSO₄ and not NaCl? (Experiment 1, parts D and E).</td><td><span class="chip cu">Experiment 1</span></td></tr>
+          <tr><th scope="row">25</th><td>Take the strips out and mark the solvent fronts in pencil at once. Ethyl acetate can reach the top earlier: take any strip out as soon as its front is about 1 cm from the top.</td><td><span class="chip chr">Experiment 2</span></td></tr>
+          <tr><th scope="row">26–32</th><td>Let the strips dry, measure, and calculate Rf.</td><td><span class="chip chr">Experiment 2</span></td></tr>
+          <tr><th scope="row">32–40</th><td>Compare predictions with results, clean up, and copy your team summary.</td><td><span class="chip">Review</span></td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <section class="wrap sect" aria-labelledby="roles-h">
+    <h2 id="roles-h">Roles</h2>
+    <p class="lead">A group of 3 has one Chemist and two Chromatographers. A group of 2 has one of each. Swap roles for the measuring.</p>
+    <div class="roles">
+      <div class="role"><b>Chemist</b>Experiment 1, steps 1–5, minutes 5–13. Handles the hot water, the copper solution and the seed.</div>
+      <div class="role"><b>Chromatographer(s)</b>Experiment 2, steps 1–2, minutes 5–13. Handle the pens, the strips and the solvent cups. The teacher pours the ethyl acetate.</div>
+      <div class="role"><b>Everyone from minute 13</b>One person keeps time and calls out minutes 15 and 25. One records. Everyone measures at least one strip.</div>
+    </div>
+  </section>
+
+  <section class="wrap sect" id="safety" aria-labelledby="safety-h">
+    <h2 id="safety-h">Safety first <span class="chip" id="safeStatus">0 / 4 confirmed</span></h2>
+    <p class="lead">Tick all four boxes as a team. The clock unlocks when you have.</p>
+    <div class="safe-grid">
+      <label class="safe"><input type="checkbox" class="safe-cb">
+        <svg viewBox="0 0 34 34" aria-hidden="true"><rect x="3" y="12" width="12" height="10" rx="4"/><rect x="19" y="12" width="12" height="10" rx="4"/><path d="M15 17h4M3 17H1M31 17h2"/></svg>
+        <span><b>Wear goggles and gloves</b> before any powder or liquid is handled.</span></label>
+      <label class="safe"><input type="checkbox" class="safe-cb">
+        <svg viewBox="0 0 34 34" aria-hidden="true"><circle cx="17" cy="17" r="13"/><path d="M8 26L26 8"/></svg>
+        <span><b>Copper sulfate is harmful.</b> Never taste it or touch your face. Wash hands afterwards.</span></label>
+      <label class="safe"><input type="checkbox" class="safe-cb">
+        <svg viewBox="0 0 34 34" aria-hidden="true"><path d="M17 3c2 6 9 9 9 17a9 9 0 0 1-18 0c0-4 3-6 4-9 2 2 3 3 3 5 1-3 2-7 2-13z"/></svg>
+        <span><b>Ethanol and ethyl acetate are flammable.</b> No flames or hot plates. Ethyl acetate fumes are strong: keep its cup covered, work near an open window or fan, and let the teacher pour it.</span></label>
+      <label class="safe"><input type="checkbox" class="safe-cb">
+        <svg viewBox="0 0 34 34" aria-hidden="true"><path d="M17 4c5 7 9 11 9 16a9 9 0 0 1-18 0c0-5 4-9 9-16z"/></svg>
+        <span><b>Hot water 60–70 °C and copper waste.</b> Pour carefully. Copper solution goes in the labelled waste bottle, not the sink.</span></label>
+    </div>
+  </section>
+
+  <section class="wrap sect" id="kit" aria-labelledby="kit-h">
+    <h2 id="kit-h">Team kit <span class="chip" id="kitStatus">0 / 9 collected</span></h2>
+    <p class="lead">Quantities are per team.</p>
+    <div class="kit-wrap">
+      <table class="kit">
+        <thead><tr><th scope="col">Got it</th><th scope="col">Material</th><th scope="col">Amount per team</th></tr></thead>
+        <tbody>
+          <tr><td><input type="checkbox" class="kit-cb" aria-label="Copper sulfate collected"></td><th scope="row">Copper sulfate pentahydrate, CuSO₄·5H₂O, from the class container</th><td class="amt">Weigh out 34 g yourself on the shared balance (within 0.5 g)</td></tr>
+          <tr><td><input type="checkbox" class="kit-cb" aria-label="Dissolving kit collected"></td><th scope="row">A cup or beaker of at least 150 mL, stirring rod, spoon, weighing boat or paper, measuring syringe or cylinder</th><td class="amt">1 each, able to measure 50 mL</td></tr>
+          <tr><td><input type="checkbox" class="kit-cb" aria-label="Crystal kit collected"></td><th scope="row">Microscope slide (or watch glass), dropper, hand lens</th><td class="amt">1 each</td></tr>
+          <tr><td><input type="checkbox" class="kit-cb" aria-label="Seed kit collected"></td><th scope="row">Seed crystal (one clear crystal from the class container, about 3–5 mm), thread, a pen or pencil to hang it from</th><td class="amt">1 seed, 15 cm of thread, 1 pen</td></tr>
+          <tr><td><input type="checkbox" class="kit-cb" aria-label="Pens collected"></td><th scope="row">Four coloured pens of your choice (4 different colours), pencil, ruler</th><td class="amt">4 pens, 1 pencil, 1 ruler</td></tr>
+          <tr><td><input type="checkbox" class="kit-cb" aria-label="Paper strips collected"></td><th scope="row">Paper strips, 4 cm × 10 cm</th><td class="amt">2 A4 and 2 filter paper</td></tr>
+          <tr><td><input type="checkbox" class="kit-cb" aria-label="Cups collected"></td><th scope="row">Glass cups or jars (at least 10 cm wide and 10 cm tall), 2 pencils, tape, plastic wrap or lids</th><td class="amt">2 cups, 2 pencils</td></tr>
+          <tr><td><input type="checkbox" class="kit-cb" aria-label="Solvents collected"></td><th scope="row">Solvents in the two labelled cups: 90% ethanol, and ethyl acetate (poured by the teacher)</th><td class="amt">25 mL of each</td></tr>
+          <tr><td><input type="checkbox" class="kit-cb" aria-label="Goggles and gloves on"></td><th scope="row">Goggles and gloves on every student</th><td class="amt">Everyone</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <details class="teacher">
+      <summary>Teacher prep (before class)</summary>
+      <ul>
+        <li>Put out CuSO₄·5H₂O in a labelled container for the class (about 200 g: 5 teams × 34 g, plus spare), with a spoon. It should include some clear crystals of 3–5 mm for seeds.</li>
+        <li>Set up one or two balances (0.1 g is fine) with weighing boats or paper. Students weigh 34 g themselves, so check the first team. With one balance, teams queue: the Chemist weighs while the others start Experiment 2.</li>
+        <li>If your CuSO₄ is only fine powder, make seeds the day before: leave a few drops of the saturated solution to evaporate on a slide, or leave a spoonful of solution in a saucer overnight, and pick out the best small crystals. Keep a few spare seeds.</li>
+        <li>Seeds go in only when the cup is warm, not hot (about 40–45 °C). A hot solution dissolves them.</li>
+        <li>Boil a kettle. Each group needs 50 mL of water at 60–70 °C, poured when the Chemist is ready at minute 5. Keep spare hot water for extra 5 mL top-ups.</li>
+        <li>34 g in 50 mL keeps the same concentration as before (saturated at about 50 °C). If you can only spare 27 g per team, still use 50 mL of water but hang the seed only once the cup is below about 40 °C.</li>
+        <li>Solvents: about 150 mL of 90% ethanol and 150 mL of 100% ethyl acetate (5 groups × 25 mL, plus spare). Pour the ethyl acetate yourself, in a ventilated room, as late as you can (minutes 9–12), because it evaporates fast. Keep both bottles capped.</li>
+        <li>Label one waste bottle “copper waste” and another “solvent waste” for leftover ethanol and ethyl acetate. Do not pour either down the drain.</li>
+        <li>Pens: students pick any four colours, so put out a mix of felt-tip pens, permanent or whiteboard markers and ballpoints. Water-based inks usually run well in ethanol but often stay on the baseline in ethyl acetate, while permanent marker inks tend to run in both. A colour that does not move is a valid result (Rf = 0), but test a few pens first so you know what to expect.</li>
+        <li>Use glass cups, jars or beakers: ethyl acetate softens polystyrene (clear disposable cups) and some other plastics. Each cup needs to be about 10 cm wide so two 4 cm strips hang side by side, and tall enough for a 10 cm strip to hang with only its bottom edge in a thin layer of liquid. If your cups are narrower, use 3 cm strips with the dots 0.7 cm apart. If they are shorter, trim the strips to 8 cm.</li>
+        <li>Cut strips: 10 A4 and 10 filter paper, 4 cm × 10 cm, plus spares.</li>
+      </ul>
+    </details>
+  </section>
+</section>
+
+<!-- ================= EXPERIMENT 1 ================= -->
+<section class="panel" role="tabpanel" id="p-cryst" aria-labelledby="t-cryst" hidden>
+  <div class="station">
+    <div class="wrap">
+      <header class="st-head">
+        <span class="st-num" aria-hidden="true">1</span>
+        <div><p class="st-time">Minutes 5–13, with checks at 17 and 20 · Experiment 1</p><h2>Crystallization</h2></div>
+      </header>
+      <p class="st-goal">Dissolve copper sulfate in hot water, let it cool a little, then hang a seed crystal in the middle of the solution. The salt cannot stay dissolved as the water cools, so it builds new crystal onto the seed.</p>
+      <div class="datacard" role="note"><span class="dc-t">Data card</span>
+        <span class="chip cu">34 g CuSO₄·5H₂O</span><span class="chip cu">50 mL hot water, 60–70 °C</span><span class="chip cu">stir 2–3 min</span><span class="chip cu">1 seed crystal on a thread</span></div>
+      <p class="callout"><b>Goggles and gloves on.</b> Pour hot water slowly. Copper solution goes in the waste bottle, not the sink.</p>
+      <p class="callout time"><b>⏱ Save time.</b> The cup needs no hands after minute 13. At minute 13, go to the Experiment 2 tab and hang the strips. Come back at minute 17 for the crystal check.
+        <br><button class="btn small" type="button" data-go="chrom">Seed is hanging: go to Experiment 2 →</button></p>
+
+      <div class="block">
+        <h3 class="sub"><span class="tag">1A</span>Predict</h3>
+        <div class="pred-row">
+          <label for="predSalt">When a hot saturated solution cools, which salt gives more crystals?</label>
+          <select id="predSalt"><option value="">choose…</option><option>CuSO₄</option><option>NaCl</option><option>About the same</option></select>
+        </div>
+      </div>
+
+      <div class="block">
+        <h3 class="sub"><span class="tag">1B</span>Make the solution and hang the seed</h3>
+        <div class="stepper" id="stepD">
+          <ol class="steps"></ol>
+          <div class="stage-col">
+            <figure class="stage"><svg id="svgD" viewBox="0 0 520 330" role="img" aria-label="Animated drawing: blue copper sulfate crystals go into a cup, hot water is poured on and stirred until the liquid is deep blue, three drops go on a slide, the cup cools until it is warm, and a seed crystal is hung on a thread from a pen so it sits in the middle of the solution and slowly grows"></svg></figure>
+            <p class="cap" aria-live="polite"></p>
+            <div class="st-ctl"></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="block">
+        <h3 class="sub"><span class="tag">1C</span>Record the crystals <span class="chip cu">minute 17–20</span></h3>
+        <p class="sub-note">Look at the slide first, because the drops cool fastest. Then look at the seed crystal on its thread.</p>
+        <div class="scroll-x"><table class="tbl">
+          <thead><tr><th scope="col">Minute first crystals seen</th><th scope="col">Crystal shape</th><th scope="col">Colour</th><th scope="col">Seed crystal</th></tr></thead>
+          <tbody><tr>
+            <td><input class="in" id="cMin" type="text" inputmode="decimal" autocomplete="off" aria-label="Minute first crystals seen"></td>
+            <td><select id="cShape" aria-label="Crystal shape"><option value="">choose…</option><option>flat blocks with straight edges</option><option>thin needles</option><option>fine powder</option><option>none yet</option></select></td>
+            <td><input class="txt" id="cColour" type="text" autocomplete="off" aria-label="Crystal colour" style="min-width:160px"></td>
+            <td><select id="cSeed" aria-label="Seed crystal"><option value="">choose…</option><option>new flat faces, bigger</option><option>looks the same</option><option>smaller or gone</option></select></td>
+          </tr></tbody>
+        </table></div>
+        <label for="cNote"><b>Bench notes</b> <span class="hint">Where did crystals start: slide, seed, thread or cup wall?</span></label>
+        <input class="txt" id="cNote" type="text" autocomplete="off">
+        <p class="callout"><b>Take-home.</b> Leave the cup undisturbed for 3–7 days, with a sheet of paper over it that does not touch the pen or thread. The seed keeps growing into one large crystal. Small crystals on the cup wall or bottom can be ignored.</p>
+      </div>
+
+      <div class="block">
+        <h3 class="sub"><span class="tag">1D</span>Solubility curves <span class="chip cu">minute 20–25</span></h3>
+        <p class="sub-note">Solubility is the most solid that dissolves in 100 g of water at a temperature. Drag the slider to read both curves. Then fill in the table below.</p>
+        <div class="graph-card">
+          <svg id="graph" viewBox="0 0 640 380" role="img" aria-label="Solubility against temperature from 0 to 80 degrees Celsius. Copper sulfate pentahydrate rises steeply from about 24 to about 126 grams per 100 grams of water. Sodium chloride is almost flat at about 36 to 38 grams."></svg>
+          <div class="slide-row">
+            <label for="tSlide"><b>Temperature</b></label>
+            <input type="range" id="tSlide" min="0" max="80" step="1" value="25">
+            <output id="tVal" for="tSlide">25 °C</output>
+          </div>
+          <div class="reads">
+            <span class="chip cu">CuSO₄·5H₂O: <b id="rCu">–</b> in 100 g water</span>
+            <span class="chip chr">NaCl: <b id="rNa">–</b> in 100 g water</span>
+            <span class="chip">Your cup (34 g salt in 50 g water) at this temperature: crystals out ≈ <b id="rCup">–</b></span>
+          </div>
+        </div>
+        <p class="sub-note"><b>Read the graph.</b> Type the solubility of each salt at 60 °C and at 20 °C. The page works out how much would crystallize when a hot solution cools.</p>
+        <div class="scroll-x"><table class="tbl" id="solTbl">
+          <thead><tr><th scope="col">Salt</th><th scope="col">At 60 °C (g / 100 g water)</th><th scope="col">At 20 °C (g / 100 g water)</th><th scope="col">Crystals per 100 g water (g)</th><th scope="col">Crystals from 50 g water (g)</th></tr></thead>
+          <tbody id="solBody">
+            <tr data-k="cu"><th scope="row">CuSO₄·5H₂O</th><td><input class="in h" type="text" inputmode="decimal" autocomplete="off" aria-label="CuSO4 solubility at 60 degrees"></td><td><input class="in c" type="text" inputmode="decimal" autocomplete="off" aria-label="CuSO4 solubility at 20 degrees"></td><td class="out d">–</td><td class="out y">–</td></tr>
+            <tr data-k="na"><th scope="row">NaCl</th><td><input class="in h" type="text" inputmode="decimal" autocomplete="off" aria-label="NaCl solubility at 60 degrees"></td><td><input class="in c" type="text" inputmode="decimal" autocomplete="off" aria-label="NaCl solubility at 20 degrees"></td><td class="out d">–</td><td class="out y">–</td></tr>
+          </tbody>
+        </table></div>
+        <p class="fb" id="solVerdict" role="status" aria-live="polite"></p>
+        <p class="hint">Crystals formed = solubility at 60 °C minus solubility at 20 °C. Your cup holds about 50 g of water, so multiply by 0.5.</p>
+        <p class="sub-note"><b>Why wait before hanging the seed?</b> 34 g in 50 g of water is only saturated at about 50 °C. Above that the solution can still dissolve more, so a hot solution would dissolve your seed. Below it, the solution holds more than it can keep, so crystal builds onto the seed.</p>
+      </div>
+
+      <div class="block">
+        <h3 class="sub"><span class="tag">1E</span>Side question: why CuSO₄ and not NaCl?</h3>
+        <p class="sub-note">Table salt is cheaper and safer, yet we crystallize copper sulfate. Tick every statement you think is a good explanation, then check.</p>
+        <div class="reasons" id="saltReasons"></div>
+        <div class="sim-ctl"><button class="btn primary" id="saltCheck" type="button">Check my choices</button></div>
+        <p class="fb" id="saltFb" role="status" aria-live="polite"></p>
+        <label for="saltOwn">In your own words: <i>Cooling a hot solution makes CuSO₄ crystals but hardly any NaCl crystals because …</i></label>
+        <textarea class="txt" id="saltOwn" placeholder="Write 2–3 sentences. Use the graph."></textarea>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ================= EXPERIMENT 2 ================= -->
+<section class="panel" role="tabpanel" id="p-chrom" aria-labelledby="t-chrom" hidden>
+  <div class="station">
+    <div class="wrap">
+      <header class="st-head">
+        <span class="st-num" aria-hidden="true">2</span>
+        <div><p class="st-time">Minutes 5–32 · Experiment 2</p><h2>Paper chromatography</h2></div>
+      </header>
+      <p class="st-goal">Put four pen colours of your choice on A4 paper and on filter paper, and run both papers in the same cup. Do it twice: once with 90% ethanol and once with ethyl acetate. Compare how far each solvent carries your colours and how well each paper separates them.</p>
+      <div class="datacard" role="note"><span class="dc-t">Data card</span>
+        <span class="chip chr">4 pens: colours of your choice</span><span class="chip chr">2 papers: A4, filter</span><span class="chip chr">2 solvents: 90% ethanol, ethyl acetate</span><span class="chip chr">strips 4 cm × 10 cm</span><span class="chip chr">run up to 10 min</span></div>
+      <p class="callout"><b>Ethanol and ethyl acetate are flammable.</b> No flames or heaters nearby. Ethyl acetate fumes are strong: the teacher pours it, keep that cup covered, and work near an open window or fan.</p>
+      <p class="callout time"><b>⏱ Save time.</b> Steps 1 and 2 do not need the copper solution. Start them at minute 5 while the Chemist works on Experiment 1. At minute 13, the whole team hangs the strips (step 3). During the run, go to Experiment 1 for the crystal check (minute 17) and the solubility graph (minute 20). Ethyl acetate can run fast, so look at that cup when you come back at minute 20.
+        <br><button class="btn small" type="button" data-go="cryst">Go to Experiment 1 →</button></p>
+
+      <div class="block">
+        <h3 class="sub"><span class="tag">2A</span>Choose your colours and predict</h3>
+        <p class="sub-note">Pick four pens in four different colours. Type their names in the order you will dot them on the strip, left to right.</p>
+        <div class="pred-row" id="penNames">
+          <label for="pen0">Your colours</label>
+          <input class="txt" id="pen0" type="text" autocomplete="off" placeholder="1, e.g. red" style="flex:1 1 130px;width:auto;min-width:130px">
+          <input class="txt" id="pen1" type="text" autocomplete="off" placeholder="2, e.g. green" aria-label="Colour 2" style="flex:1 1 130px;width:auto;min-width:130px">
+          <input class="txt" id="pen2" type="text" autocomplete="off" placeholder="3, e.g. blue" aria-label="Colour 3" style="flex:1 1 130px;width:auto;min-width:130px">
+          <input class="txt" id="pen3" type="text" autocomplete="off" placeholder="4, e.g. orange" aria-label="Colour 4" style="flex:1 1 130px;width:auto;min-width:130px">
+        </div>
+        <div class="pred-row">
+          <label for="predPaper">In the same cup, which paper will separate the colours better?</label>
+          <select id="predPaper"><option value="">choose…</option><option>Filter paper</option><option>A4 paper</option><option>No difference</option></select>
+        </div>
+        <div class="pred-row">
+          <label for="predSolv">Which solvent will carry more of your colours up the paper?</label>
+          <select id="predSolv"><option value="">choose…</option><option>90% ethanol</option><option>Ethyl acetate</option><option>No difference</option></select>
+        </div>
+      </div>
+
+      <div class="block">
+        <h3 class="sub"><span class="tag">2B</span>Set up and run the strips</h3>
+        <div class="stepper" id="stepE">
+          <ol class="steps"></ol>
+          <div class="stage-col">
+            <figure class="stage"><svg id="svgE" viewBox="0 0 520 352" role="img" aria-label="Animated drawing: four coloured dots on an A4 strip and a filter paper strip, both hung in the same cup. One cup holds 90% ethanol and the other ethyl acetate. The solvents rise, the colours separate into spots (some colours may move in one solvent and not the other), the fronts are marked and Rf is measured"></svg></figure>
+            <p class="cap" aria-live="polite"></p>
+            <div class="st-ctl"></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="block">
+        <h3 class="sub"><span class="tag">2C</span>Record your measurements <span class="chip chr">minute 26–32</span></h3>
+        <p class="sub-note">Measure in cm from the baseline. Measure each solvent front once. Then, for each colour, measure the spot that travelled furthest (top) and the one that travelled least (bottom). One spot only? Type the same distance twice. Colour never left the baseline? Type 0. Rf = spot distance ÷ front distance. Spread = Rf top minus Rf bottom: a bigger spread means the colour split into more distinct dyes.</p>
+        <div class="scroll-x"><table class="tbl" id="rfTbl">
+          <thead><tr><th scope="col">Colour</th><th scope="col">Top spot (cm)</th><th scope="col">Bottom spot (cm)</th><th scope="col">Rf top</th><th scope="col">Rf bottom</th><th scope="col">Spread</th></tr></thead>
+          <tbody id="rfBody"></tbody>
+        </table></div>
+        <p class="fb" id="rfVerdict" role="status" aria-live="polite"></p>
+        <p class="hint">A ⚠ means Rf is above 1, so check your measurement. Rf = 0 means that colour did not dissolve and travel in that solvent. That is a result, not a mistake.</p>
+        <label for="chrNote"><b>Bench notes</b> <span class="hint">Which front moved faster? Which colours stayed on the baseline in which solvent? Any streaking?</span></label>
+        <input class="txt" id="chrNote" type="text" autocomplete="off">
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ================= REVIEW ================= -->
+<section class="panel" role="tabpanel" id="p-review" aria-labelledby="t-review" hidden>
+  <div class="station">
+    <div class="wrap">
+      <header class="st-head">
+        <span class="st-num" aria-hidden="true">3</span>
+        <div><p class="st-time">Minutes 32–40 · Review</p><h2>Review and clean up</h2></div>
+      </header>
+      <p class="st-goal">Compare your predictions with your results, explain the chromatography, and clean up.</p>
+
+      <div class="block">
+        <h3 class="sub"><span class="tag">3A</span>Predictions against results</h3>
+        <p class="fb" id="cmpSalt" role="status" aria-live="polite"></p>
+        <p class="fb" id="cmpPaper" role="status" aria-live="polite"></p>
+        <p class="fb" id="cmpSolv" role="status" aria-live="polite"></p>
+      </div>
+
+      <div class="block">
+        <h3 class="sub"><span class="tag">3B</span>Which statements are good explanations?</h3>
+        <p class="sub-note">About the chromatography. Tick every statement you think is a good explanation, then check.</p>
+        <div class="reasons" id="chrReasons"></div>
+        <div class="sim-ctl"><button class="btn primary" id="chrCheck" type="button">Check my choices</button></div>
+        <p class="fb" id="chrFb" role="status" aria-live="polite"></p>
+      </div>
+
+      <div class="block">
+        <h3 class="sub"><span class="tag">3C</span>In your own words</h3>
+        <label for="phases">Name the <b>mobile phase</b> and the <b>stationary phase</b>, and say why filter paper and A4 can give different results, and why ethanol and ethyl acetate can carry different colours.</label>
+        <textarea class="txt" id="phases" placeholder="Write 2–3 sentences"></textarea>
+      </div>
+
+      <div class="block">
+        <h3 class="sub"><span class="tag">3D</span>Clean up <span class="chip" id="cleanStatus">0 / 4 done</span></h3>
+        <div class="kit-wrap"><table class="kit"><tbody>
+          <tr><td><input type="checkbox" class="clean-cb" aria-label="Copper solution in waste bottle"></td><th scope="row">Copper solution (from the cup) poured into the labelled copper waste bottle, not the sink. Leave the cup for take-home crystal growth only if your teacher says so, and lift the seed out with gloves.</th></tr>
+          <tr><td><input type="checkbox" class="clean-cb" aria-label="Strips in bin"></td><th scope="row">Paper strips and tape in the bin</th></tr>
+          <tr><td><input type="checkbox" class="clean-cb" aria-label="Solvents handed to teacher"></td><th scope="row">Ethanol and ethyl acetate cups covered and handed to the teacher for the solvent waste bottle. Do not pour solvents down the sink.</th></tr>
+          <tr><td><input type="checkbox" class="clean-cb" aria-label="Equipment and hands washed"></td><th scope="row">Cups, beaker, slide and rod washed, then hands washed</th></tr>
+        </tbody></table></div>
+      </div>
+
+      <div class="block">
+        <h3 class="sub"><span class="tag">3E</span>Team summary</h3>
+        <p class="sub-note">This fills in as you work. Copy it and paste it into your report or send it to your teacher.</p>
+        <textarea class="summary" id="summary" readonly aria-label="Team summary text"></textarea>
+        <div class="sim-ctl"><button class="btn primary" id="copyBtn" type="button">Copy summary</button><span class="hint" id="copyFb" role="status" aria-live="polite"></span></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+</main>
+
+<footer class="wrap foot">
+  <p>The animations show an example pattern (in the chromatography animation, which colours move in which solvent is only an illustration). Real results depend on your pens, paper, room temperature and how fast the solution cools. Write down what you actually see.</p>
+  <p>Solubility curves: NaCl values from published tables (35.7, 35.9, 36.4, 37.0 and 37.9 g per 100 g water at 0, 20, 40, 60 and 80 °C). CuSO₄·5H₂O values are converted from published anhydrous CuSO₄ solubility (14.3, 20.5, 28.7, 39.5 and 55.5 g per 100 g water) by adding the water held in the crystal, so they match what you weigh. Some textbooks list a lower pentahydrate series (for example 32 g at 20 °C). Treat all values as approximate, within about 5%.</p>
+</footer>
+
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+<script>
+(() => {
+'use strict';
+
+/* ---------- helpers ---------- */
+const $ = (s, r = document) => r.querySelector(s);
+const $$ = (s, r = document) => Array.from(r.querySelectorAll(s));
+const NS = 'http://www.w3.org/2000/svg';
+const reduce = !!(window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches);
+const clamp = (x, a, b) => Math.min(b, Math.max(a, x));
+const lerp = (a, b, t) => a + (b - a) * t;
+const ease = t => t < .5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;
+const sleep = ms => new Promise(r => setTimeout(r, reduce ? 0 : ms));
+const mix = (a, b, t) => 'rgb(' + a.map((v, i) => Math.round(lerp(v, b[i], t))).join(',') + ')';
+function tween(ms, fn, alive) {
+  return new Promise(res => {
+    if (reduce || ms <= 0) { fn(1); res(); return; }
+    const t0 = performance.now();
+    const step = now => {
+      if (alive && !alive()) { res(); return; }
+      const k = clamp((now - t0) / ms, 0, 1);
+      fn(ease(k));
+      if (k < 1) requestAnimationFrame(step); else res();
+    };
+    requestAnimationFrame(step);
+  });
+}
+function S(tag, attrs, parent) {
+  const e = document.createElementNS(NS, tag);
+  if (attrs) for (const k in attrs) e.setAttribute(k, attrs[k]);
+  if (parent) parent.appendChild(e);
+  return e;
+}
+function H(tag, cls, html) { const e = document.createElement(tag); if (cls) e.className = cls; if (html != null) e.innerHTML = html; return e; }
+function parseNum(s) { s = String(s == null ? '' : s).trim().replace(',', '.'); const m = s.match(/^[-+]?(\d+\.?\d*|\.\d+)/); return m ? parseFloat(m[0]) : NaN; }
+let toastT;
+function toast(msg) { const t = $('#toast'); t.textContent = msg; t.classList.add('show'); clearTimeout(toastT); toastT = setTimeout(() => t.classList.remove('show'), 5200); }
+
+/* ---------- stepper ---------- */
+function makeStepper(id, steps, scene) {
+  const root = $('#' + id), list = $('.steps', root), cap = $('.cap', root), ctl = $('.st-ctl', root);
+  let cur = 0, tok = 0, playing = false;
+  const items = steps.map((s, i) => {
+    const li = H('li', 'step');
+    li.innerHTML = '<button type="button"><span class="step-n">' + (i + 1) + '</span><span class="step-t"><b>' + s.t + '</b><small>' + s.d + '</small></span></button>';
+    $('button', li).addEventListener('click', () => { stop(); go(i); });
+    list.appendChild(li);
+    return li;
+  });
+  const bBack = H('button', 'btn', '◀ Back'), bNext = H('button', 'btn primary', 'Next step ▶'),
+        bRep = H('button', 'btn', '↻ Replay'), bAuto = H('button', 'btn ghost', '▶ Play all');
+  [bBack, bNext, bRep, bAuto].forEach(b => { b.type = 'button'; ctl.appendChild(b); });
+  function paint() {
+    items.forEach((li, i) => { li.classList.toggle('on', i === cur); $('button', li).setAttribute('aria-current', i === cur ? 'step' : 'false'); });
+    cap.textContent = steps[cur].c;
+    bBack.disabled = cur === 0; bNext.disabled = cur === steps.length - 1;
+  }
+  async function go(i, fast) {
+    cur = clamp(i, 0, steps.length - 1);
+    const my = ++tok;
+    paint();
+    await scene.enter(cur, () => my === tok, !!fast);
+  }
+  function stop() { if (playing) { playing = false; bAuto.textContent = '▶ Play all'; } }
+  bBack.onclick = () => { stop(); go(cur - 1); };
+  bNext.onclick = () => { stop(); go(cur + 1); };
+  bRep.onclick = () => { stop(); go(cur); };
+  bAuto.onclick = async () => {
+    if (playing) { stop(); return; }
+    playing = true; bAuto.textContent = '❚❚ Stop';
+    for (let i = 0; i < steps.length && playing; i++) { await go(i); if (!playing) break; await sleep(900); }
+    stop();
+  };
+  go(0, true);
+}
+
+/* tilted jug used by both scenes: returns the group, the pouring corner and the label */
+function mkJug(parent, cx, cy, label, lx, anchor) {
+  const g = S('g', { opacity: 0 }, parent);
+  const j = S('g', { transform: 'rotate(-35 ' + cx + ' ' + cy + ')' }, g);
+  S('rect', { x: cx - 32, y: cy - 28, width: 64, height: 56, rx: 10, fill: 'var(--surface)', stroke: 'var(--glass)', 'stroke-width': 3 }, j);
+  S('rect', { x: cx - 24, y: cy - 6, width: 48, height: 28, rx: 6, fill: 'var(--eth)', opacity: .8 }, j);
+  const lbl = S('text', { x: lx == null ? cx + 44 : lx, y: cy - 34, 'text-anchor': anchor || 'start', class: 's-lbl b' }, g);
+  lbl.textContent = label;
+  return { g, sx: cx - 42, sy: cy - 2, lbl };
+}
+
+/* ---------- Scene D: dissolving, cooling, hanging the seed ---------- */
+function sceneD(svg) {
+  svg.innerHTML = '';
+  const LIGHT = [196, 226, 246], DARK = [22, 104, 200], LEVEL = 70;
+  const cp = S('clipPath', { id: 'cpD' }, svg); S('path', { d: 'M72 90 V240 Q72 250 82 250 H178 Q188 250 188 240 V90 Z' }, cp);
+  S('line', { x1: 20, y1: 254, x2: 500, y2: 254, stroke: 'var(--line)', 'stroke-width': 2 }, svg);
+  const gCup = S('g', null, svg);
+  const liq = S('rect', { x: 70, y: 250, width: 120, height: 0, 'clip-path': 'url(#cpD)' }, gCup);
+  liq.style.fill = mix(LIGHT, LIGHT, 0);
+  const grains = [];
+  for (let i = 0; i < 18; i++) {
+    const e = S('rect', { width: 10, height: 10, rx: 1.5 }, gCup); e.style.fill = '#2b6fd1';
+    grains.push({ e, x: 80 + ((i * 29) % 86), fy: 238 - Math.floor(i / 6) * 8 - ((i * 7) % 3) * 2, r: (i * 47) % 90 });
+  }
+  const put = (g, y, o) => { g.e.setAttribute('transform', 'translate(' + g.x + ' ' + y.toFixed(1) + ') rotate(' + g.r + ' 5 5)'); g.e.setAttribute('opacity', o); };
+  S('path', { d: 'M70 90 V240 Q70 252 82 252 H178 Q190 252 190 240 V90', class: 's-glass' }, gCup);
+  const steam = S('g', { opacity: 0 }, gCup);
+  [104, 130, 156].forEach(x => S('path', { d: 'M' + x + ' 172 q8 -10 0 -20 q-8 -10 0 -20', fill: 'none', stroke: 'var(--ink-3)', 'stroke-width': 2.5, 'stroke-linecap': 'round' }, steam));
+  const jug = mkJug(gCup, 170, 48, 'hot water 60–70 °C');
+  const stream = S('rect', { x: jug.sx - 2, y: jug.sy, width: 4, height: 0, fill: 'var(--eth)', opacity: 0 }, gCup);
+  const rod = S('line', { x1: 130, y1: 246, x2: 168, y2: 70, 'stroke-width': 8, class: 's-rod', opacity: 0 }, gCup);
+  const setLiq = h => { liq.setAttribute('y', (250 - h).toFixed(1)); liq.setAttribute('height', (h + 4).toFixed(1)); };
+
+  const seedSet = S('g', null, svg);
+  const sp = S('polygon', { points: '292,246 304,236 318,242 316,252 302,254', stroke: '#123c85', 'stroke-width': 2 }, seedSet); sp.style.fill = '#5aa2f0';
+  S('text', { x: 305, y: 276, 'text-anchor': 'middle', class: 's-lbl' }, seedSet).textContent = 'seed';
+
+  const gSlide = S('g', { opacity: 0 }, svg);
+  S('rect', { x: 360, y: 246, width: 120, height: 7, rx: 1, fill: 'var(--surface)', stroke: 'var(--glass)', 'stroke-width': 2 }, gSlide);
+  const drops = [388, 420, 452].map(x => { const e = S('ellipse', { cx: x, cy: 245, rx: 9, ry: 3.5, opacity: 0 }, gSlide); e.style.fill = mix(DARK, DARK, 0); return e; });
+  const crys = [];
+  for (let i = 0; i < 6; i++) { const e = S('rect', { x: 372 + i * 17, y: 241, width: 8, height: 5, rx: 1, opacity: 0 }, gSlide); e.style.fill = '#8fc1f7'; crys.push(e); }
+  S('text', { x: 420, y: 276, 'text-anchor': 'middle', class: 's-lbl' }, gSlide).textContent = 'slide: 3 drops';
+
+  const gHang = S('g', { opacity: 0 }, svg);
+  S('line', { x1: 44, y1: 84, x2: 218, y2: 84, 'stroke-width': 8, 'stroke-linecap': 'round', stroke: '#3b4f7a' }, gHang);
+  S('line', { x1: 130, y1: 86, x2: 130, y2: 206, stroke: 'var(--ink-2)', 'stroke-width': 1.5 }, gHang);
+  S('text', { x: 232, y: 89, class: 's-lbl' }, gHang).textContent = 'pen';
+  const seedG = S('g', null, gHang);
+  const sd = S('polygon', { points: '119,215 130,205 143,211 142,224 129,227', stroke: '#123c85', 'stroke-width': 2 }, seedG); sd.style.fill = '#5aa2f0';
+  const setSeed = s => seedG.setAttribute('transform', 'translate(131 216) scale(' + s.toFixed(3) + ') translate(-131 -216)');
+
+  const lens = S('g', { opacity: 0 }, svg);
+  S('circle', { cx: 260, cy: 140, r: 104, fill: 'var(--surface)', stroke: 'var(--ink)', 'stroke-width': 4 }, lens);
+  const big = S('polygon', { points: '196,152 240,90 306,98 330,152 298,208 232,200', stroke: '#123c85', 'stroke-width': 3 }, lens); big.style.fill = '#5aa2f0';
+  S('polygon', { points: '226,152 250,118 290,122 302,152 284,180 246,175', fill: 'none', stroke: '#0b1f3d', 'stroke-width': 2, 'stroke-dasharray': '5 4' }, lens);
+  S('text', { x: 264, y: 156, 'text-anchor': 'middle', class: 's-lbl b', fill: '#0b1f3d' }, lens).textContent = 'seed';
+  S('text', { x: 268, y: 198, 'text-anchor': 'middle', class: 's-lbl b', fill: '#0b1f3d' }, lens).textContent = 'growth';
+  S('line', { x1: 334, y1: 68, x2: 392, y2: 16, stroke: 'var(--ink)', 'stroke-width': 10, 'stroke-linecap': 'round' }, lens);
+  const st = S('text', { x: 260, y: 312, 'text-anchor': 'middle', class: 's-lbl b' }, svg);
+
+  async function enter(i, alive, fast) {
+    const T = ms => fast ? 0 : ms;
+    stream.setAttribute('opacity', 0); jug.g.setAttribute('opacity', 0); rod.setAttribute('opacity', 0); lens.setAttribute('opacity', 0); steam.setAttribute('opacity', 0);
+    gHang.setAttribute('opacity', i >= 4 ? 1 : 0); gHang.setAttribute('transform', 'translate(0 0)');
+    gSlide.setAttribute('opacity', i >= 3 ? 1 : 0);
+    seedSet.setAttribute('opacity', i <= 3 ? 1 : 0);
+    gCup.setAttribute('opacity', i === 5 ? .3 : 1);
+    drops.forEach(d => d.setAttribute('opacity', i >= 4 ? 1 : 0));
+    crys.forEach(c => c.setAttribute('opacity', i === 5 ? 1 : 0));
+    setSeed(i === 5 ? 1.35 : 1);
+    st.textContent = '';
+    if (i === 0) {
+      setLiq(0); liq.style.fill = mix(LIGHT, LIGHT, 0);
+      grains.forEach(g => put(g, -20, 0));
+      st.textContent = 'Keep one clear crystal aside as the seed';
+      await tween(T(1500), k => grains.forEach((g, j) => { const kk = clamp(k * 1.6 - j * .04, 0, 1); put(g, lerp(-20, g.fy, kk), kk > 0 ? 1 : 0); }), alive);
+      return;
+    }
+    if (i === 1) {
+      grains.forEach(g => put(g, g.fy, 1));
+      setLiq(0); liq.style.fill = mix(LIGHT, LIGHT, 0);
+      jug.g.setAttribute('opacity', 1); stream.setAttribute('opacity', 1);
+      await tween(T(1900), k => { const h = LEVEL * k; setLiq(h); stream.setAttribute('height', Math.max(0, 250 - h - jug.sy).toFixed(1)); }, alive);
+      if (!alive()) return;
+      stream.setAttribute('opacity', 0); jug.g.setAttribute('opacity', 0);
+      return;
+    }
+    if (i === 2) {
+      grains.forEach(g => put(g, g.fy, 1));
+      setLiq(LEVEL); rod.setAttribute('opacity', 1);
+      await tween(T(3400), k => {
+        rod.setAttribute('transform', 'rotate(' + (10 * Math.sin(k * Math.PI * 12)).toFixed(1) + ' 130 246)');
+        liq.style.fill = mix(LIGHT, DARK, k);
+        grains.forEach(g => put(g, g.fy, (1 - k).toFixed(2)));
+      }, alive);
+      return;
+    }
+    setLiq(LEVEL); liq.style.fill = mix(DARK, DARK, 0);
+    grains.forEach(g => put(g, g.fy, 0));
+    if (i === 3) {
+      st.textContent = 'Cool until the cup is warm, not hot (about 40–45 °C)';
+      steam.setAttribute('opacity', 1);
+      await tween(T(3500), k => { steam.setAttribute('opacity', (1 - k).toFixed(2)); drops.forEach(d => d.setAttribute('opacity', clamp(k * 4, 0, 1).toFixed(2))); }, alive);
+      return;
+    }
+    if (i === 4) {
+      st.textContent = 'Seed in the middle: not touching sides, bottom or surface';
+      gHang.setAttribute('transform', 'translate(0 -70)');
+      await tween(T(1500), k => gHang.setAttribute('transform', 'translate(0 ' + (-70 * (1 - k)).toFixed(1) + ')'), alive);
+      if (!alive()) return;
+      st.textContent = 'Growing on its own. Minute 13: go to Experiment 2';
+      await tween(T(3500), k => { setSeed(lerp(1, 1.35, k)); crys.forEach((c, j) => c.setAttribute('opacity', clamp(k * 1.6 - j * .1, 0, 1).toFixed(2))); }, alive);
+      return;
+    }
+    lens.setAttribute('opacity', 1);
+    st.textContent = 'Hand lens: the seed has grown new flat faces';
+  }
+  return { enter };
+}
+
+/* ---------- Scene E: chromatography, 2 solvents x 2 papers x 4 colours ---------- */
+function sceneE(svg) {
+  svg.innerHTML = '';
+  const Y0 = 286, YB = 258, L = 190, FMAX = 140, W = 56, CW = 230;
+  /* example pens: the colours and Rf values are illustrative only */
+  const PENS = [
+    { comps: [{ c: '#c62828', r: .46 }, { c: '#ef6c8a', r: .72 }], ea: true },
+    { comps: [{ c: '#1b5e20', r: .28 }, { c: '#9ccc3b', r: .62 }], ea: false },
+    { comps: [{ c: '#1a3fa0', r: .40 }, { c: '#5a8cf0', r: .70 }], ea: false },
+    { comps: [{ c: '#e65100', r: .58 }], ea: true }
+  ];
+  const CUPS = [
+    { x: 20, name: '90% ethanol', tint: '#9cc9ea', all: true, sp: { A4: .74, FP: .92 } },
+    { x: 270, name: 'ethyl acetate', tint: '#b7dfa6', all: false, sp: { A4: .85, FP: 1 } }
+  ];
+  const names = S('g', null, svg);
+  CUPS.forEach(cu => { S('text', { x: cu.x + CW / 2, y: 322, 'text-anchor': 'middle', class: 's-lbl b' }, names).textContent = cu.name; });
+  const cupsG = S('g', { opacity: 0 }, svg);
+  const liqs = CUPS.map(cu => {
+    const g = S('g', null, cupsG);
+    const liq = S('rect', { x: cu.x + 2, y: 300, width: CW - 4, height: 0, fill: cu.tint, opacity: .75 }, g);
+    S('path', { d: 'M' + cu.x + ' 90 V292 Q' + cu.x + ' 300 ' + (cu.x + 8) + ' 300 H' + (cu.x + CW - 8) + ' Q' + (cu.x + CW) + ' 300 ' + (cu.x + CW) + ' 292 V90', class: 's-glass' }, g);
+    return liq;
+  });
+  const jug = mkJug(svg, 177, 46, CUPS[0].name, 117, 'end');
+  const stream = S('rect', { x: jug.sx - 2, y: jug.sy, width: 4, height: 0, fill: '#9cc9ea', opacity: 0 }, svg);
+  const hang = S('g', null, svg);
+  function mkStrip(x0, cu, key, fill) {
+    const g = S('g', null, hang);
+    S('rect', { x: x0, y: Y0 - L, width: W, height: L, fill, stroke: 'var(--glass)', 'stroke-width': 1.5 }, g);
+    const wet = S('rect', { x: x0, y: Y0, width: W, height: 0, fill: '#7fb8e6', opacity: .4 }, g);
+    const base = S('line', { x1: x0, x2: x0 + W, y1: YB, y2: YB, stroke: '#666', 'stroke-width': 1.5, 'stroke-dasharray': '4 3' }, g);
+    const front = S('line', { x1: x0, x2: x0 + W, y1: YB, y2: YB, stroke: '#222', 'stroke-width': 2.5, opacity: 0 }, g);
+    const smear = key === 'A4';
+    const dots = PENS.map((p, i) => S('ellipse', { cx: x0 + 7 + i * 14, cy: YB, rx: 4.5, ry: 4.5, fill: p.comps[0].c }, g));
+    const comps = [];
+    PENS.forEach((p, i) => p.comps.forEach((c, j) => {
+      const moves = cu.all || p.ea;
+      comps.push({ r: moves ? c.r : 0, show: moves || j === 0, e: S('ellipse', { cx: x0 + 7 + i * 14, cy: YB, rx: smear ? 6 : 4.5, ry: 4.5, fill: c.c, opacity: 0 }, g) });
+    }));
+    return { speed: cu.sp[key], smear, wet, base, front, dots, comps };
+  }
+  const strips = [];
+  CUPS.forEach(cu => {
+    strips.push(mkStrip(cu.x + 45, cu, 'A4', '#ffffff'));
+    strips.push(mkStrip(cu.x + 129, cu, 'FP', '#f3ecd2'));
+  });
+  const pen = S('g', { opacity: 0 }, hang);
+  CUPS.forEach(cu => {
+    S('line', { x1: cu.x - 8, y1: 88, x2: cu.x + CW + 8, y2: 88, 'stroke-width': 7, class: 's-rod' }, pen);
+    [cu.x + 45, cu.x + 129].forEach(x => S('rect', { x, y: 91, width: W, height: 9, fill: 'rgba(190,190,190,.7)' }, pen));
+    S('text', { x: cu.x + 45 + W / 2, y: 72, 'text-anchor': 'middle', class: 's-lbl b' }, hang).textContent = 'A4';
+    S('text', { x: cu.x + 129 + W / 2, y: 72, 'text-anchor': 'middle', class: 's-lbl b' }, hang).textContent = 'filter';
+  });
+
+  const setRun = (s, k) => {
+    const F = k * FMAX * s.speed, fy = YB - F;
+    s.wet.setAttribute('y', fy.toFixed(1)); s.wet.setAttribute('height', (Y0 - fy).toFixed(1));
+    s.front.setAttribute('y1', fy.toFixed(1)); s.front.setAttribute('y2', fy.toFixed(1));
+    const a = clamp(k * 6, 0, 1);
+    s.dots.forEach(d => d.setAttribute('opacity', (1 - a).toFixed(2)));
+    s.comps.forEach(c => {
+      c.e.setAttribute('cy', (YB - c.r * F).toFixed(1)); c.e.setAttribute('opacity', c.show ? a.toFixed(2) : 0);
+      c.e.setAttribute('ry', (4.5 + (s.smear ? c.r * F * .06 : 0)).toFixed(1));
+    });
+  };
+  const dry = s => {
+    s.wet.setAttribute('height', 0); s.front.setAttribute('opacity', 0); s.base.setAttribute('opacity', 1);
+    s.dots.forEach(d => d.setAttribute('opacity', 1));
+    s.comps.forEach(c => { c.e.setAttribute('opacity', 0); c.e.setAttribute('cy', YB); c.e.setAttribute('ry', 4.5); });
+  };
+
+  /* measurement marks on the filter strip in the ethanol cup */
+  const meas = S('g', { opacity: 0 }, svg);
+  const ms = strips[1], Fm = FMAX * ms.speed, fyF = YB - Fm, syF = YB - PENS[3].comps[0].r * Fm, sx2 = CUPS[0].x + 129 + W;
+  const arrow = (x, y1, y2, txt, ty) => {
+    S('line', { x1: x, x2: x, y1, y2, stroke: 'var(--ink)', 'stroke-width': 2 }, meas);
+    S('line', { x1: x - 6, x2: x + 6, y1, y2: y1, stroke: 'var(--ink)', 'stroke-width': 2 }, meas);
+    S('line', { x1: x - 6, x2: x + 6, y1: y2, y2, stroke: 'var(--ink)', 'stroke-width': 2 }, meas);
+    S('text', { x, y: ty, 'text-anchor': 'middle', class: 's-lbl b' }, meas).textContent = txt;
+  };
+  S('line', { x1: sx2, x2: 232, y1: syF, y2: syF, stroke: 'var(--ink-3)', 'stroke-dasharray': '3 3' }, meas);
+  S('line', { x1: sx2, x2: 258, y1: fyF, y2: fyF, stroke: 'var(--ink-3)', 'stroke-dasharray': '3 3' }, meas);
+  arrow(226, YB, syF, 'spot', syF - 8);
+  arrow(252, YB, fyF, 'front', fyF - 8);
+  S('text', { x: 260, y: 48, 'text-anchor': 'middle', class: 's-lbl b' }, meas).textContent = 'Rf = spot ÷ front';
+  const st = S('text', { x: 260, y: 342, 'text-anchor': 'middle', class: 's-lbl b' }, svg);
+
+  async function enter(i, alive, fast) {
+    const T = ms => fast ? 0 : ms;
+    stream.setAttribute('opacity', 0); jug.g.setAttribute('opacity', 0); meas.setAttribute('opacity', 0);
+    hang.setAttribute('transform', 'translate(0 0)'); st.textContent = '';
+    strips.forEach(dry);
+    const liqOn = () => liqs.forEach(l => { l.setAttribute('y', 280); l.setAttribute('height', 20); });
+    if (i === 0) {
+      cupsG.setAttribute('opacity', 0); hang.setAttribute('opacity', 1); pen.setAttribute('opacity', 0);
+      strips.forEach(s => { s.base.setAttribute('opacity', 0); s.dots.forEach(d => d.setAttribute('opacity', 0)); });
+      st.textContent = 'Baseline 1.5 cm up, four small dots in your colours';
+      await tween(T(1800), k => strips.forEach(s => { s.base.setAttribute('opacity', clamp(k * 2, 0, 1)); s.dots.forEach(d => d.setAttribute('opacity', clamp(k * 2 - 1, 0, 1))); }), alive);
+      return;
+    }
+    if (i === 1) {
+      hang.setAttribute('opacity', 0); cupsG.setAttribute('opacity', 1);
+      liqs.forEach(l => { l.setAttribute('y', 300); l.setAttribute('height', 0); });
+      jug.g.setAttribute('opacity', 1);
+      for (let c = 0; c < 2; c++) {
+        if (!alive()) return;
+        const dx = c * 250;
+        jug.g.setAttribute('transform', 'translate(' + dx + ' 0)');
+        jug.lbl.textContent = CUPS[c].name;
+        stream.setAttribute('x', jug.sx - 2 + dx); stream.setAttribute('opacity', 1);
+        st.textContent = c ? 'The teacher pours the ethyl acetate. Cover it at once' : 'A thin layer of 90% ethanol, below the baseline';
+        await tween(T(1500), k => { const hh = 20 * k; liqs[c].setAttribute('y', (300 - hh).toFixed(1)); liqs[c].setAttribute('height', hh.toFixed(1)); stream.setAttribute('height', Math.max(0, 300 - hh - jug.sy).toFixed(1)); }, alive);
+        stream.setAttribute('opacity', 0);
+      }
+      if (alive()) jug.g.setAttribute('opacity', 0);
+      return;
+    }
+    if (i === 2) {
+      cupsG.setAttribute('opacity', 1); liqOn(); hang.setAttribute('opacity', 1); pen.setAttribute('opacity', 1);
+      st.textContent = 'Both papers in the same cup: start the timer';
+      await tween(T(1500), k => hang.setAttribute('transform', 'translate(0 ' + (-70 * (1 - k)).toFixed(1) + ')'), alive);
+      if (alive()) strips.forEach(s => setRun(s, 0));
+      return;
+    }
+    if (i === 3) {
+      cupsG.setAttribute('opacity', 1); liqOn(); hang.setAttribute('opacity', 1); pen.setAttribute('opacity', 1);
+      strips.forEach(s => setRun(s, 0));
+      st.textContent = 'Fronts rising (an example: your pens may differ)';
+      await tween(T(6500), k => strips.forEach(s => setRun(s, k)), alive);
+      return;
+    }
+    cupsG.setAttribute('opacity', 0); hang.setAttribute('opacity', 1); pen.setAttribute('opacity', 0);
+    strips.forEach(s => { setRun(s, 1); s.wet.setAttribute('height', 0); s.front.setAttribute('opacity', 1); });
+    if (i === 4) { st.textContent = 'Mark each solvent front in pencil straight away'; return; }
+    meas.setAttribute('opacity', 1);
+    st.textContent = 'Measure to each spot and to the front';
+  }
+  return { enter };
+}
+
+const stepsD = [
+  { t: 'Pick a seed and weigh 34 g.', d: 'Minute 5. Pick the clearest crystal (about 3–5 mm) from the class container and put it aside on a tissue. Then use the shared balance to weigh 34 g of CuSO₄·5H₂O (within 0.5 g) onto a weighing boat. Keep dust down, and tip the powder into your biggest cup or beaker.', c: 'The seed waits on the bench. The 34 g you weighed goes into the cup.' },
+  { t: 'Add 50 mL of hot water.', d: 'Measure 50 mL of hot water (60–70 °C). The teacher pours, or pour slowly with the cup on the bench.', c: 'Hot water holds much more salt than cold water. The graph shows how much.' },
+  { t: 'Stir for 2–3 minutes.', d: 'Stir until no grains are left and the liquid is clear and deep blue. If grains remain, add 5 mL more hot water, up to 10 mL in total.', c: 'The crystals dissolve and the liquid turns deep blue.' },
+  { t: 'Take 3 drops, then let it cool.', d: 'Minutes 9–12. Put 3 drops on the slide for a quick crystal check. Leave the cup alone until it feels warm, not hot (about 40–45 °C, or use a thermometer). 50 mL cools slowly, so stand the cup in a tray of cool tap water to speed it up. A hot solution would dissolve the seed.', c: 'Above about 50 °C this solution is not saturated yet, so a seed would dissolve. Wait for the steam to fade.' },
+  { t: 'Hang the seed and switch.', d: 'Minutes 12–13. Loop the thread around the seed. Tie the other end to a pen or pencil laid across the cup rim. Adjust it so the seed hangs in the middle of the solution, not touching the sides, the bottom or the surface. Do not move the cup. Then go to Experiment 2 and hang the strips.', c: 'Crystal grows on the seed with no help from you. Use the time for Experiment 2.' },
+  { t: 'Crystal check, minutes 17–20.', d: 'Look at the slide and the seed with the hand lens. In part 1C record when crystals first appeared on the slide, their shape and colour, and whether the seed has new growth.', c: 'Hand lens view: the seed has grown new flat faces.' }
+];
+const stepsE = [
+  { t: 'Choose 4 colours, draw baselines and dots.', d: 'Minutes 5–10. Pick 4 pens in 4 different colours and type their names in part 2A. With a pencil, draw a line 1.5 cm from the bottom of all 4 strips (2 A4, 2 filter paper, each 4 cm × 10 cm). Divide the line into four 1 cm slots. Put one small dot of each colour in the middle of its slot, in the same order on every strip. Write the paper (A4 or FP) and the solvent (E = ethanol, EA = ethyl acetate) at the top.', c: 'Pencil, not pen. Same colour order on every strip. Dots no bigger than a pin head.' },
+  { t: 'Set up the two solvent cups.', d: 'Minutes 10–12. Cup 1: 90% ethanol. Cup 2: ethyl acetate, poured by your teacher. Label both cups. The liquid layer should be about 0.5 cm deep (roughly 25 mL), below the baseline. Cover the ethyl acetate cup straight away.', c: 'A thin layer. If the baseline sits in the liquid, the ink washes away.' },
+  { t: 'Hang both papers in the same cup.', d: 'Minutes 13–15. For each cup, tape one A4 strip and one filter strip side by side, about 1 cm apart, to a pencil across the rim. Only the bottom edge touches the liquid. Cover the cup and do not move it.', c: 'Same cup, same solvent, same time: only the paper is different.' },
+  { t: 'Let it run, minutes 15–25.', d: 'Do not move the cups. Watch the fronts: which paper rises faster in each cup, and which colours move or stay on the baseline? Use the wait for the crystal check (minute 17) and the solubility graph (minute 20) in Experiment 1. Ethyl acetate can run fast: take a strip out as soon as its front is about 1 cm from the top.', c: 'Each solvent carries each dye differently. A colour that stays put is a result.' },
+  { t: 'Stop and mark the fronts.', d: 'Take each strip out when its front is about 1 cm from the top, or at minute 25 at the latest. Mark the front with a pencil straight away. Both solvents dry in seconds and the front becomes invisible.', c: 'Mark each front at once.' },
+  { t: 'Dry and measure.', d: 'Minutes 26–32. Measure from the baseline to the front, then to the top and bottom spot of each colour. Rf = spot distance ÷ front distance. A colour that never left the baseline has Rf = 0. Fill in part 2C.', c: 'Rf is always between 0 and 1.' }
+];
+
+/* ---------- solubility graph ---------- */
+const CU = [[0, 24.3], [20, 36.3], [40, 53.6], [60, 79.5], [80, 126.4]];
+const NA = [[0, 35.7], [20, 35.9], [40, 36.4], [60, 37.0], [80, 37.9]];
+function interp(d, T, log) {
+  T = clamp(T, 0, 80); let i = 0;
+  while (i < d.length - 2 && T > d[i + 1][0]) i++;
+  const x0 = d[i][0], y0 = d[i][1], x1 = d[i + 1][0], y1 = d[i + 1][1], k = (T - x0) / (x1 - x0);
+  return log ? Math.exp(lerp(Math.log(y0), Math.log(y1), k)) : lerp(y0, y1, k);
+}
+const sCu = T => interp(CU, T, true), sNa = T => interp(NA, T, false);
+function buildGraph() {
+  const svg = $('#graph'); svg.innerHTML = '';
+  const W = 640, Hh = 380, ml = 60, mr = 26, mt = 20, mb = 54, YM = 140;
+  const X = t => ml + t / 80 * (W - ml - mr), Y = v => Hh - mb - v / YM * (Hh - mt - mb);
+  for (let v = 0; v <= YM; v += 20) {
+    S('line', { x1: ml, x2: W - mr, y1: Y(v), y2: Y(v), class: 'g-grid' }, svg);
+    S('text', { x: ml - 8, y: Y(v) + 4, 'text-anchor': 'end', class: 'g-t' }, svg).textContent = v;
+  }
+  for (let t = 0; t <= 80; t += 10) {
+    S('line', { x1: X(t), x2: X(t), y1: Y(0), y2: Y(0) + 5, class: 'g-ax' }, svg);
+    S('text', { x: X(t), y: Y(0) + 20, 'text-anchor': 'middle', class: 'g-t' }, svg).textContent = t;
+  }
+  S('line', { x1: ml, x2: W - mr, y1: Y(0), y2: Y(0), class: 'g-ax' }, svg);
+  S('line', { x1: ml, x2: ml, y1: Y(0), y2: Y(YM), class: 'g-ax' }, svg);
+  S('text', { x: (ml + W - mr) / 2, y: Hh - 10, 'text-anchor': 'middle', class: 'g-t b' }, svg).textContent = 'Temperature (°C)';
+  const ym = (mt + Hh - mb) / 2;
+  S('text', { x: 16, y: ym, 'text-anchor': 'middle', class: 'g-t b', transform: 'rotate(-90 16 ' + ym + ')' }, svg).textContent = 'Solid dissolved in 100 g water (g)';
+  const pts = f => { const p = []; for (let t = 0; t <= 80; t += 2) p.push(X(t).toFixed(1) + ',' + Y(f(t)).toFixed(1)); return p.join(' '); };
+  S('polyline', { points: pts(sCu), class: 'g-cu' }, svg);
+  S('polyline', { points: pts(sNa), class: 'g-na' }, svg);
+  CU.forEach(p => S('circle', { cx: X(p[0]), cy: Y(p[1]), r: 4.5, class: 'g-dcu' }, svg));
+  NA.forEach(p => S('circle', { cx: X(p[0]), cy: Y(p[1]), r: 4.5, class: 'g-dna' }, svg));
+  S('text', { x: X(56), y: Y(sCu(56)) - 14, 'text-anchor': 'end', class: 'g-t cu b' }, svg).textContent = 'CuSO₄·5H₂O';
+  S('text', { x: X(8), y: Y(36) - 12, class: 'g-t na b' }, svg).textContent = 'NaCl';
+  const cur = S('line', { y1: Y(0), y2: Y(YM), class: 'g-cur' }, svg);
+  const c1 = S('circle', { r: 6.5, class: 'g-ccu' }, svg), c2 = S('circle', { r: 6.5, class: 'g-cna' }, svg);
+  return t => {
+    const x = X(t);
+    cur.setAttribute('x1', x); cur.setAttribute('x2', x);
+    c1.setAttribute('cx', x); c1.setAttribute('cy', Y(sCu(t))); c2.setAttribute('cx', x); c2.setAttribute('cy', Y(sNa(t)));
+  };
+}
+let moveCursor = () => {};
+function setT(t) {
+  moveCursor(t);
+  $('#tVal').textContent = t + ' °C';
+  const a = sCu(t), b = sNa(t), out = Math.max(0, 34 - a * .5);
+  $('#rCu').textContent = a.toFixed(0) + ' g'; $('#rNa').textContent = b.toFixed(1) + ' g';
+  $('#rCup').textContent = out < .05 ? 'none (all 34 g stays dissolved)' : out.toFixed(1) + ' g (in theory)';
+}
+
+/* ---------- solubility table ---------- */
+const sol = { winner: null, data: {} };
+function calcSol() {
+  const dr = {};
+  $$('#solBody tr').forEach(tr => {
+    const a = parseNum($('.h', tr).value), b = parseNum($('.c', tr).value), d = $('.d', tr), y = $('.y', tr);
+    if (a >= 0 && b >= 0) { const drop = a - b; d.textContent = drop.toFixed(1); y.textContent = (drop * .5).toFixed(1); dr[tr.dataset.k] = drop; sol.data[tr.dataset.k] = { h: a, c: b, drop }; }
+    else { d.textContent = '–'; y.textContent = '–'; delete sol.data[tr.dataset.k]; }
+  });
+  const v = $('#solVerdict');
+  if (dr.cu != null && dr.na != null) {
+    sol.winner = Math.abs(dr.cu - dr.na) < 2 ? 'About the same' : (dr.cu > dr.na ? 'CuSO₄' : 'NaCl');
+    v.className = 'fb ok';
+    const ratio = dr.na > 0.05 && dr.cu > 0 ? ' That is about ' + (dr.cu / dr.na).toFixed(0) + ' times as much.' : '';
+    v.innerHTML = '<b>Cooling from 60 °C to 20 °C</b> would crystallize about <b>' + dr.cu.toFixed(1) + ' g</b> of CuSO₄·5H₂O but only <b>' + dr.na.toFixed(1) + ' g</b> of NaCl per 100 g of water.' + ratio;
+  } else { sol.winner = null; v.className = 'fb'; v.textContent = ''; }
+  compare();
+}
+
+/* ---------- reasons (tick and check) ---------- */
+const SALT_R = [
+  { t: 'CuSO₄·5H₂O dissolves far more in hot water than in cool water, so cooling a hot solution pushes crystals out.', good: true, why: 'The blue curve climbs steeply with temperature.' },
+  { t: 'The NaCl curve is almost flat, so cooling a hot NaCl solution gives almost no crystals.', good: true, why: 'NaCl solubility changes by only about 2 g between 0 and 80 °C.' },
+  { t: 'NaCl would have to be crystallized by evaporating the water, which is far too slow for a 40-minute class.', good: true, why: 'With no temperature effect, crystals only appear as the water slowly leaves.' },
+  { t: 'CuSO₄ crystals are deep blue with flat faces, so they are easy to see with a hand lens.', good: true, why: 'A useful bonus for observation, though not the main reason.' },
+  { t: 'NaCl does not dissolve in water.', good: false, why: 'It dissolves very well, about 36 g in 100 g of water.' },
+  { t: 'CuSO₄ is chosen because it is safer than NaCl.', good: false, why: 'The opposite: CuSO₄ is more hazardous, which is why you need goggles, gloves and a waste bottle.' }
+];
+const CHR_R = [
+  { t: 'Different dyes in one ink dissolve differently in the solvent and stick differently to the paper, so they travel different distances.', good: true, why: 'This difference in attraction is what separates the colours.' },
+  { t: 'A colour that stays on the baseline in one solvent but travels in the other does not dissolve well in the first solvent.', good: true, why: 'The solvent has to dissolve a dye to carry it. Ethanol is more polar than ethyl acetate, so many water-soluble dyes prefer ethanol.' },
+  { t: 'Filter paper is usually more uniform and absorbent than office paper, so the solvent tends to rise more evenly.', good: true, why: 'A4 paper is often coated or sized, which can slow and blur the run.' },
+  { t: 'Hanging both papers in the same cup makes it a fair test of the paper.', good: true, why: 'Same solvent, same time, same temperature: only the paper differs.' },
+  { t: 'The baseline is drawn in pencil because graphite does not dissolve and run with the solvent.', good: true, why: 'Pen ink would run up the strip and confuse the result.' },
+  { t: 'Teams chose different pen colours, so they can get different results in the same solvent.', good: true, why: 'Every ink is a different mixture of dyes. Compare papers and solvents using your own strips.' },
+  { t: 'The baseline should sit under the liquid so more ink dissolves.', good: false, why: 'The ink would wash into the cup and nothing would separate.' },
+  { t: 'An Rf value can be larger than 1.', good: false, why: 'A spot cannot travel further than the solvent front, so Rf is between 0 and 1.' },
+  { t: 'Ethanol and ethyl acetate give identical results because both are clear liquids.', good: false, why: 'They have different polarity, so dyes dissolve and travel differently in each.' },
+  { t: 'A colour with Rf = 0 means the experiment failed.', good: false, why: 'Rf = 0 is a real result: that dye did not dissolve and travel in that solvent.' }
+];
+const rs = { salt: null, chr: null };
+function buildReasons(boxId, btnId, fbId, list, key, prefix, okMsg) {
+  const box = $('#' + boxId), fb = $('#' + fbId);
+  list.forEach((r, i) => { const l = H('label', 'reason'); l.innerHTML = '<input type="checkbox" id="' + prefix + i + '"><span>' + r.t + '<small></small></span>'; box.appendChild(l); });
+  $('#' + btnId).addEventListener('click', () => {
+    let score = 0;
+    $$('.reason', box).forEach((l, i) => {
+      const r = list[i], on = $('input', l).checked, ok = on === r.good;
+      if (ok) score++;
+      l.classList.toggle('right', ok); l.classList.toggle('wrong', !ok);
+      $('small', l).textContent = (ok ? '✓ ' : '✗ ') + (r.good && !on ? 'A good explanation you missed. ' : !r.good && on ? 'Not a good explanation. ' : '') + r.why;
+    });
+    rs[key] = score;
+    fb.className = 'fb ' + (score === list.length ? 'ok' : 'warn');
+    fb.innerHTML = '<b>' + score + ' of ' + list.length + ' judged correctly.</b> ' + (score === list.length ? okMsg : 'Change the ones marked ✗ and check again.');
+  });
+}
+
+/* ---------- chromatography table ---------- */
+const RF_GROUPS = [
+  { s: 'Eth', p: 'A4', t: 'Ethanol 90% · A4 paper' },
+  { s: 'Eth', p: 'FP', t: 'Ethanol 90% · filter paper' },
+  { s: 'EA', p: 'A4', t: 'Ethyl acetate · A4 paper' },
+  { s: 'EA', p: 'FP', t: 'Ethyl acetate · filter paper' }
+];
+const chrom = { paper: null, solvent: null, spread: {}, top: {}, moved: { Eth: [0, 0], EA: [0, 0] } };
+const penName = i => (($('#pen' + i).value || '').trim() || 'Colour ' + (i + 1));
+function penLabels() { $$('#rfBody .pn').forEach(e => { e.textContent = penName(+e.dataset.i); }); }
+function buildRf() {
+  const tb = $('#rfBody');
+  RF_GROUPS.forEach((g, gi) => {
+    const hr = document.createElement('tr'); hr.className = 'grp';
+    hr.innerHTML = '<th colspan="6" scope="colgroup">' + g.t + ' &nbsp;·&nbsp; front distance (cm): <input class="in fr" data-g="' + gi + '" type="text" inputmode="decimal" autocomplete="off" aria-label="' + g.t + ': solvent front distance in cm"></th>';
+    tb.appendChild(hr);
+    for (let i = 0; i < 4; i++) {
+      const tr = document.createElement('tr'); tr.dataset.g = gi; tr.dataset.i = i;
+      tr.innerHTML = '<th scope="row"><span class="pn" data-i="' + i + '"></span></th>' +
+        '<td><input class="in a" type="text" inputmode="decimal" autocomplete="off" aria-label="' + g.t + ', colour ' + (i + 1) + ': top spot distance in cm"></td>' +
+        '<td><input class="in b" type="text" inputmode="decimal" autocomplete="off" aria-label="' + g.t + ', colour ' + (i + 1) + ': bottom spot distance in cm"></td>' +
+        '<td class="out ra">–</td><td class="out rb">–</td><td class="out sp">–</td>';
+      tb.appendChild(tr);
+    }
+  });
+  penLabels();
+}
+function calcRf() {
+  const sp = { A4: [], FP: [], Eth: [], EA: [] }, tp = { Eth: [], EA: [] }, mv = { Eth: [0, 0], EA: [0, 0] };
+  const fronts = RF_GROUPS.map((g, gi) => parseNum($('.fr[data-g="' + gi + '"]').value));
+  $$('#rfBody tr[data-g]').forEach(tr => {
+    const gi = +tr.dataset.g, g = RF_GROUPS[gi], f = fronts[gi];
+    const a = parseNum($('.a', tr).value), b = parseNum($('.b', tr).value);
+    const ra = $('.ra', tr), rb = $('.rb', tr), sc = $('.sp', tr);
+    if (f > 0 && a >= 0 && b >= 0) {
+      const hi = Math.max(a, b) / f, lo = Math.min(a, b) / f, s = hi - lo;
+      ra.textContent = hi.toFixed(2) + (hi > 1.001 ? ' ⚠' : ''); rb.textContent = lo.toFixed(2) + (lo > 1.001 ? ' ⚠' : ''); sc.textContent = s.toFixed(2);
+      sp[g.p].push(s); sp[g.s].push(s); tp[g.s].push(hi); mv[g.s][1]++; if (hi > 0.02) mv[g.s][0]++;
+    } else { ra.textContent = rb.textContent = sc.textContent = '–'; }
+  });
+  const avg = arr => arr.length ? arr.reduce((p, q) => p + q, 0) / arr.length : null;
+  chrom.spread = { A4: avg(sp.A4), FP: avg(sp.FP) };
+  chrom.top = { Eth: avg(tp.Eth), EA: avg(tp.EA) };
+  chrom.moved = mv;
+  const S2 = chrom.spread, T2 = chrom.top, parts = [];
+  chrom.paper = null; chrom.solvent = null;
+  if (S2.A4 != null && S2.FP != null) {
+    const d = S2.FP - S2.A4;
+    chrom.paper = Math.abs(d) < .03 ? 'Same' : (d > 0 ? 'FP' : 'A4');
+    parts.push('<b>Paper:</b> ' + (chrom.paper === 'Same' ? 'no clear difference' : (chrom.paper === 'FP' ? 'filter paper separated better' : 'A4 separated better')) + ' (average spread: filter ' + S2.FP.toFixed(2) + ', A4 ' + S2.A4.toFixed(2) + ').');
+  }
+  if (T2.Eth != null && T2.EA != null) {
+    const d = T2.Eth - T2.EA;
+    chrom.solvent = Math.abs(d) < .05 ? 'Same' : (d > 0 ? 'Eth' : 'EA');
+    parts.push('<b>Solvent:</b> ' + (chrom.solvent === 'Same' ? 'no clear difference' : (chrom.solvent === 'Eth' ? '90% ethanol carried the colours further' : 'ethyl acetate carried the colours further')) +
+      ' (average top Rf: ethanol ' + T2.Eth.toFixed(2) + ', ethyl acetate ' + T2.EA.toFixed(2) + '; colours that moved: ethanol ' + mv.Eth[0] + ' of ' + mv.Eth[1] + ', ethyl acetate ' + mv.EA[0] + ' of ' + mv.EA[1] + ').');
+  }
+  const v = $('#rfVerdict');
+  if (parts.length) { v.className = 'fb ok'; v.innerHTML = parts.join(' '); } else { v.className = 'fb'; v.textContent = ''; }
+  compare();
+}
+
+/* ---------- compare predictions ---------- */
+function compare() {
+  const f1 = $('#cmpSalt'), p1 = $('#predSalt').value;
+  if (!sol.winner) { f1.className = 'fb warn'; f1.textContent = 'Fill in the solubility table in Experiment 1 (part 1D) to check your crystal prediction.'; }
+  else if (!p1) { f1.className = 'fb warn'; f1.textContent = 'You did not make a crystal prediction in Experiment 1. Your graph reading says: ' + sol.winner + '.'; }
+  else {
+    const ok = p1 === sol.winner; f1.className = 'fb ' + (ok ? 'ok' : 'warn');
+    f1.innerHTML = ok ? '<b>Crystals: your prediction matched.</b> The graph shows ' + sol.winner + ' gives more crystals on cooling.' : '<b>Crystals: your prediction differed.</b> You predicted ' + p1 + '; the graph says ' + sol.winner + '. What changed your mind?';
+  }
+  const f2 = $('#cmpPaper'), p2 = $('#predPaper').value, map = { FP: 'Filter paper', A4: 'A4 paper', Same: 'No difference' };
+  if (!chrom.paper) { f2.className = 'fb warn'; f2.textContent = 'Fill in the table in Experiment 2 (part 2C) for both papers to check your paper prediction.'; }
+  else if (!p2) { f2.className = 'fb warn'; f2.textContent = 'You did not make a paper prediction in Experiment 2. Your result: ' + map[chrom.paper] + '.'; }
+  else {
+    const ok = p2 === map[chrom.paper]; f2.className = 'fb ' + (ok ? 'ok' : 'warn');
+    f2.innerHTML = ok ? '<b>Paper: your prediction matched.</b> Result: ' + map[chrom.paper].toLowerCase() + '.' : '<b>Paper: your prediction differed.</b> You predicted ' + p2.toLowerCase() + '; the result was ' + map[chrom.paper].toLowerCase() + '. What might explain it?';
+  }
+  const f3 = $('#cmpSolv'), p3 = $('#predSolv').value, map3 = { Eth: '90% ethanol', EA: 'Ethyl acetate', Same: 'No difference' };
+  if (!chrom.solvent) { f3.className = 'fb warn'; f3.textContent = 'Fill in the table in Experiment 2 (part 2C) for both solvents to check your solvent prediction.'; }
+  else if (!p3) { f3.className = 'fb warn'; f3.textContent = 'You did not make a solvent prediction in Experiment 2. Your result: ' + map3[chrom.solvent] + '.'; }
+  else {
+    const ok = p3 === map3[chrom.solvent]; f3.className = 'fb ' + (ok ? 'ok' : 'warn');
+    f3.innerHTML = ok ? '<b>Solvent: your prediction matched.</b> Result: ' + map3[chrom.solvent].toLowerCase() + '.' : '<b>Solvent: your prediction differed.</b> You predicted ' + p3.toLowerCase() + '; the result was ' + map3[chrom.solvent].toLowerCase() + '. Which colours behaved differently?';
+  }
+}
+
+/* ---------- summary ---------- */
+function summaryText() {
+  const v = id => (($('#' + id).value || '').trim() || '—');
+  const sd = k => sol.data[k] ? sol.data[k].h + ' g at 60 °C, ' + sol.data[k].c + ' g at 20 °C, drop ' + sol.data[k].drop.toFixed(1) + ' g per 100 g water' : '—';
+  const f = x => x == null ? '—' : x.toFixed(2);
+  const mvt = m => chrom.moved[m][1] ? chrom.moved[m][0] + ' of ' + chrom.moved[m][1] : '—';
+  const pens = [0, 1, 2, 3].map(i => ($('#pen' + i).value || '').trim()).filter(Boolean).join(', ') || '—';
+  return [
+    'CRYSTALS AND INKS: TEAM SUMMARY', 'Team: ' + v('team'), '',
+    'EXPERIMENT 1: CRYSTALLIZATION',
+    'Prediction (salt giving more crystals on cooling): ' + v('predSalt'),
+    'First crystals at minute: ' + v('cMin') + '    Shape: ' + v('cShape') + '    Colour: ' + v('cColour') + '    Seed crystal: ' + v('cSeed'),
+    'Bench notes: ' + v('cNote'),
+    'CuSO4·5H2O: ' + sd('cu'),
+    'NaCl: ' + sd('na'),
+    'Side question, explanations judged correctly: ' + (rs.salt == null ? '—' : rs.salt + ' of ' + SALT_R.length),
+    'Why CuSO4 and not NaCl: ' + v('saltOwn'), '',
+    'EXPERIMENT 2: CHROMATOGRAPHY',
+    'Colours used: ' + pens,
+    'Prediction (better paper): ' + v('predPaper'),
+    'Prediction (solvent carrying more colour): ' + v('predSolv'),
+    'Average spread: filter ' + f(chrom.spread.FP) + ', A4 ' + f(chrom.spread.A4),
+    'Average top Rf: 90% ethanol ' + f(chrom.top.Eth) + ', ethyl acetate ' + f(chrom.top.EA),
+    'Colours that moved: 90% ethanol ' + mvt('Eth') + ', ethyl acetate ' + mvt('EA'),
+    'Bench notes: ' + v('chrNote'), '',
+    'REVIEW',
+    'Explanations judged correctly: ' + (rs.chr == null ? '—' : rs.chr + ' of ' + CHR_R.length),
+    'Mobile and stationary phase, and why papers and solvents differ: ' + v('phases')
+  ].join('\n');
+}
+let sT;
+const sched = () => { clearTimeout(sT); sT = setTimeout(() => { $('#summary').value = summaryText(); }, 150); };
+
+/* ---------- tabs ---------- */
+const TABIDS = ['plan', 'cryst', 'chrom', 'review'];
+let curTab = 'plan';
+function showTab(id, scroll) {
+  curTab = id;
+  TABIDS.forEach(t => {
+    const b = $('#t-' + t), p = $('#p-' + t), on = t === id;
+    b.setAttribute('aria-selected', on ? 'true' : 'false'); b.tabIndex = on ? 0 : -1; p.hidden = !on;
+    if (on) b.classList.remove('cue');
+  });
+  $$('.seg').forEach(s => s.classList.toggle('on', s.dataset.seg === id));
+  if (scroll !== false) window.scrollTo({ top: 0, behavior: reduce ? 'auto' : 'smooth' });
+}
+
+/* ---------- clock and cues ---------- */
+const CUES = [
+  { t: 0, m: 'Get ready: safety boxes, kit, roles', tab: 'plan' },
+  { t: 5, m: 'Chemist: Experiment 1. Others: Experiment 2, steps 1 and 2', tab: 'cryst' },
+  { t: 13, m: 'Seed hanging? Whole team to Experiment 2, step 3: hang the strips', tab: 'chrom' },
+  { t: 15, m: 'All four strips touching the liquid? The run starts now', tab: null },
+  { t: 17, m: 'Crystal check: Experiment 1, step 6', tab: 'cryst' },
+  { t: 20, m: 'Solubility graph and the NaCl side question', tab: null },
+  { t: 25, m: 'Strips out (ethyl acetate may be earlier). Mark the solvent fronts now', tab: 'chrom' },
+  { t: 32, m: 'Review, clean up and team summary', tab: 'review' }
+];
+const SEGT = [0, 5, 13, 25, 40];
+const clock = { base: 0, start: 0, running: false, timer: null, last: -1 };
+const elapsed = () => clock.base + (clock.running ? (Date.now() - clock.start) / 1000 : 0);
+function drawClock() {
+  const e = clamp(elapsed(), 0, 2400), m = Math.floor(e / 60), s = Math.floor(e % 60);
+  $('#clk').textContent = String(m).padStart(2, '0') + ':' + String(s).padStart(2, '0');
+  $('#prog').style.width = (e / 2400 * 100) + '%';
+  let idx = -1; for (let i = 0; i < 4; i++) if (e >= SEGT[i] && e < SEGT[i + 1]) idx = i;
+  $$('.seg').forEach((sg, i) => sg.classList.toggle('now', (clock.running || e > 0) && i === idx));
+  let ci = -1; CUES.forEach((c, i) => { if (e / 60 >= c.t) ci = i; });
+  if (ci !== clock.last) {
+    if (clock.running && ci >= 0) {
+      toast('Minute ' + CUES[ci].t + ': ' + CUES[ci].m);
+      const tg = CUES[ci].tab; if (tg && tg !== curTab) $('#t-' + tg).classList.add('cue');
+    }
+    clock.last = ci;
+  }
+  if (e >= 2400 && clock.running) { stopClock(); toast('Time is up. Finish your summary.'); }
+}
+function stopClock() {
+  if (clock.running) { clock.base = elapsed(); clock.running = false; }
+  clearInterval(clock.timer); $('#clkBtn').textContent = clock.base > 0 ? 'Resume' : 'Start'; drawClock();
+}
+function counter(cbSel, chipSel, total, label, onDone) {
+  const cbs = $$(cbSel), chip = $(chipSel);
+  const upd = () => { const n = cbs.filter(c => c.checked).length; chip.textContent = n + ' / ' + total + ' ' + label; chip.className = 'chip' + (n === total ? ' ok' : ''); if (onDone) onDone(n === total); };
+  cbs.forEach(c => c.addEventListener('change', upd)); upd();
+}
+
+/* ---------- start ---------- */
+function init() {
+  makeStepper('stepD', stepsD, sceneD($('#svgD')));
+  makeStepper('stepE', stepsE, sceneE($('#svgE')));
+  moveCursor = buildGraph(); setT(25);
+  $('#tSlide').addEventListener('input', e => setT(parseInt(e.target.value, 10)));
+  buildReasons('saltReasons', 'saltCheck', 'saltFb', SALT_R, 'salt', 'sr-', 'You can explain why CuSO₄ suits crystallization by cooling.');
+  buildReasons('chrReasons', 'chrCheck', 'chrFb', CHR_R, 'chr', 'cr-', 'You can explain how and why the colours separate.');
+  buildRf();
+  $$('#solBody input').forEach(i => i.addEventListener('input', calcSol));
+  $$('#rfBody input').forEach(i => i.addEventListener('input', calcRf));
+  $('#predSalt').addEventListener('change', compare);
+  $('#predPaper').addEventListener('change', compare);
+  $('#predSolv').addEventListener('change', compare);
+  $$('#penNames input').forEach(i => i.addEventListener('input', penLabels));
+  compare();
+
+  counter('.safe-cb', '#safeStatus', 4, 'confirmed', ok => { const b = $('#clkBtn'); b.disabled = !ok; b.title = ok ? 'Start the 40-minute clock' : 'Tick all four safety boxes to start the clock'; });
+  counter('.kit-cb', '#kitStatus', 9, 'collected');
+  counter('.clean-cb', '#cleanStatus', 4, 'done');
+
+  $('#clkBtn').addEventListener('click', () => {
+    if (clock.running) { stopClock(); return; }
+    if (clock.base >= 2400) return;
+    clock.running = true; clock.start = Date.now(); clock.last = -1; $('#clkBtn').textContent = 'Pause';
+    clock.timer = setInterval(drawClock, 250); drawClock();
+  });
+  $('#clkReset').addEventListener('click', () => {
+    clock.running = false; clearInterval(clock.timer); clock.base = 0; clock.last = -1;
+    $('#clkBtn').textContent = 'Start'; $$('.tab').forEach(t => t.classList.remove('cue')); drawClock();
+  });
+  drawClock();
+
+  $$('.tab').forEach(b => b.addEventListener('click', () => showTab(b.dataset.tab)));
+  $('.tabs').addEventListener('keydown', e => {
+    const i = TABIDS.indexOf(curTab); let n = -1;
+    if (e.key === 'ArrowRight') n = (i + 1) % 4; else if (e.key === 'ArrowLeft') n = (i + 3) % 4; else if (e.key === 'Home') n = 0; else if (e.key === 'End') n = 3;
+    if (n >= 0) { e.preventDefault(); showTab(TABIDS[n], false); $('#t-' + TABIDS[n]).focus(); }
+  });
+  $$('.seg').forEach(s => s.addEventListener('click', e => { e.preventDefault(); showTab(s.dataset.seg); }));
+  document.addEventListener('click', e => { const g = e.target.closest('[data-go]'); if (g) showTab(g.dataset.go); });
+  showTab('plan', false);
+
+  $('#copyBtn').addEventListener('click', async () => {
+    const ta = $('#summary'), fb = $('#copyFb'); ta.value = summaryText();
+    try { await navigator.clipboard.writeText(ta.value); fb.textContent = 'Copied.'; }
+    catch (e) { ta.focus(); ta.select(); fb.textContent = 'Text selected. Press Ctrl+C (or ⌘+C) to copy.'; }
+  });
+  document.addEventListener('input', sched); document.addEventListener('change', sched); document.addEventListener('click', sched);
+  sched();
+}
+init();
+})();
+</script>
+</body>
+</html>
